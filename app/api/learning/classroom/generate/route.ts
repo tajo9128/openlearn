@@ -1,25 +1,17 @@
 import { type NextRequest } from 'next/server';
 import { apiSuccess, apiError, API_ERROR_CODES } from '@/lib/server/api-response';
-import { supabaseQuery, supabaseQuerySingle, supabaseUpsert, TABLES } from '@/lib/learning/supabase-client';
+import { supabaseQuerySingle, supabaseUpsert, TABLES } from '@/lib/learning/supabase-client';
 import { createLogger } from '@/lib/logger';
 
 const log = createLogger('Classroom Generate API');
 
 /**
  * POST /api/learning/classroom/generate
- * Generate an OpenMAIC classroom from a lesson.
- *
- * Flow:
- * 1. Fetch lesson + course content from Supabase
- * 2. Build requirement string
- * 3. POST to OpenMAIC's /api/generate-classroom
- * 4. Poll until done
- * 5. Save classroom_id to lesson record
- * 6. Return classroom URL
+ * Start classroom generation (async — returns jobId immediately).
  */
 export async function POST(request: NextRequest) {
   try {
-    const { lesson_id, course_id } = await request.json();
+    const { lesson_id, course_id, wait } = await request.json();
 
     if (!lesson_id || !course_id) {
       return apiError(API_ERROR_CODES.MISSING_REQUIRED_FIELD, 400, 'Missing lesson_id or course_id');
@@ -42,12 +34,11 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Fetch course info for context
+    // Fetch course + lessons for context
     const { data: course } = await supabaseQuerySingle<any>(TABLES.COURSES, {
       filters: { id: `eq.${course_id}` },
     });
 
-    // Fetch all lessons in this course for context
     const { data: modules } = await supabaseQuery<any>(TABLES.MODULES, {
       filters: { course_id: `eq.${course_id}` },
       order: { column: 'sort_order', ascending: true },
@@ -63,79 +54,45 @@ export async function POST(request: NextRequest) {
       allLessons = data ?? [];
     }
 
-    const courseTitle = course?.title ?? 'Course';
-    const courseDesc = course?.description ?? '';
+    // Build requirement
+    const requirement = buildRequirement(lesson, course, allLessons);
 
-    // Build requirement string
-    const requirement = buildClassroomRequirement(lesson, courseTitle, courseDesc, allLessons);
-
-    // Call OpenMAIC's server-side generation API
+    // Start generation job
     const baseUrl = 'http://localhost:3000';
     const genRes = await fetch(`${baseUrl}/api/generate-classroom`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        requirement,
-        agentMode: 'generate',
-      }),
+      body: JSON.stringify({ requirement, agentMode: 'generate' }),
     });
 
     if (!genRes.ok) {
       const errText = await genRes.text();
       log.error('Generation API failed:', errText);
-      return apiError(API_ERROR_CODES.UPSTREAM_ERROR, 500, 'Failed to start classroom generation', errText);
+      return apiError(API_ERROR_CODES.UPSTREAM_ERROR, 500, 'Failed to start generation', errText);
     }
 
     const genData = await genRes.json();
     const jobId = genData.jobId;
 
-    // Poll until done (max 5 minutes)
-    let classroomId: string | null = null;
-    let status = 'running';
-    let attempts = 0;
-    const maxAttempts = 60; // 60 * 5s = 300s = 5min
-
-    while (status === 'running' || status === 'pending') {
-      if (attempts >= maxAttempts) {
-        return apiError(API_ERROR_CODES.UPSTREAM_ERROR, 504, 'Classroom generation timed out (5 minutes)');
+    // If wait=true, poll until done (up to 15 minutes)
+    if (wait) {
+      const result = await pollForCompletion(baseUrl, jobId, 180);
+      if (result.classroomId) {
+        await supabaseUpsert(TABLES.LESSONS, { id: lesson_id, classroom_id: result.classroomId }, 'id');
+        return apiSuccess({
+          classroom_id: result.classroomId,
+          url: `/classroom/${result.classroomId}`,
+          cached: false,
+        });
       }
-
-      await new Promise((resolve) => setTimeout(resolve, 5000));
-      attempts++;
-
-      try {
-        const pollRes = await fetch(`${baseUrl}/api/generate-classroom/${jobId}`);
-        const pollData = await pollRes.json();
-
-        status = pollData.status;
-
-        if (status === 'succeeded' && pollData.result?.id) {
-          classroomId = pollData.result.id;
-          break;
-        }
-
-        if (status === 'failed') {
-          return apiError(API_ERROR_CODES.UPSTREAM_ERROR, 500, 'Classroom generation failed', pollData.error);
-        }
-      } catch (pollErr) {
-        log.warn('Poll error (retrying):', pollErr);
-      }
+      return apiError(API_ERROR_CODES.UPSTREAM_ERROR, 504, result.error ?? 'Generation timed out');
     }
 
-    if (!classroomId) {
-      return apiError(API_ERROR_CODES.INTERNAL_ERROR, 500, 'No classroom ID returned');
-    }
-
-    // Save classroom_id to lesson record
-    await supabaseUpsert(TABLES.LESSONS, {
-      id: lesson_id,
-      classroom_id: classroomId,
-    }, 'id');
-
+    // Otherwise return jobId immediately (async mode)
     return apiSuccess({
-      classroom_id: classroomId,
-      url: `/classroom/${classroomId}`,
-      cached: false,
+      job_id: jobId,
+      poll_url: `/api/generate-classroom/${jobId}`,
+      message: 'Generation started. Poll the poll_url for status.',
     });
   } catch (error) {
     log.error('Classroom generation failed:', error);
@@ -148,41 +105,33 @@ export async function POST(request: NextRequest) {
   }
 }
 
-/**
- * Build a rich requirement string for OpenMAIC's classroom generator.
- */
-function buildClassroomRequirement(
-  lesson: any,
-  courseTitle: string,
-  courseDescription: string,
-  allLessons: any[],
-): string {
-  const lessonContent = lesson.content ?? '';
-  const strippedContent = lessonContent.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+async function pollForCompletion(baseUrl: string, jobId: string, maxPolls: number) {
+  for (let i = 0; i < maxPolls; i++) {
+    await new Promise((r) => setTimeout(r, 5000));
+    try {
+      const res = await fetch(`${baseUrl}/api/generate-classroom/${jobId}`);
+      const data = await res.json();
 
-  const otherTopics = allLessons
-    .filter((l) => l.id !== lesson.id)
-    .slice(0, 10)
-    .map((l) => `- ${l.title}`)
-    .join('\n');
+      if (data.status === 'succeeded' && (data.result?.classroomId || data.result?.id)) {
+        return { classroomId: data.result?.classroomId || data.result?.id };
+      }
+      if (data.status === 'failed') {
+        return { classroomId: null, error: data.error };
+      }
+    } catch (e) {
+      log.warn('Poll error:', e);
+    }
+  }
+  return { classroomId: null, error: 'Timeout' };
+}
 
-  return `Create an interactive, engaging classroom lesson about: "${lesson.title}"
+function buildRequirement(lesson: any, course: any, allLessons: any[]): string {
+  const content = (lesson.content ?? '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+  const otherTopics = allLessons.filter((l) => l.id !== lesson.id).slice(0, 10).map((l) => `- ${l.title}`).join('\n');
 
-This lesson is part of the course: "${courseTitle}"
-Course description: ${courseDescription}
-
-Lesson content to teach:
-${strippedContent.substring(0, 6000)}
-
-Other topics in this course (for context):
-${otherTopics}
-
-Requirements:
-- Create clear, educational slides with examples
-- Include interactive quiz questions to test understanding
-- Use code examples where appropriate
-- Make it engaging for pharmaceutical/science students
-- Include a summary slide at the end
-- Target duration: ${lesson.duration_minutes ?? 15} minutes
-- Language: English`;
+  return `Create an interactive classroom lesson about: "${lesson.title}"
+Course: "${course?.title ?? ''}"
+${otherTopics ? `Other topics: ${otherTopics}` : ''}
+Content: ${content.substring(0, 4000)}
+Include quizzes and interactive examples. Duration: ${lesson.duration_minutes ?? 15} min.`;
 }

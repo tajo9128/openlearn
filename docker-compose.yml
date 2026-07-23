@@ -18,7 +18,7 @@ services:
       - render # reach the render service over the isolated network
     volumes:
       # Optional: mount server-providers.yml for provider config
-      # - ./server-providers.yml:/app/server-providers.yml:ro
+      - ./server-providers.yml:/app/server-providers.yml:ro
       - openmaic-data:/app/data
     restart: unless-stopped
 
