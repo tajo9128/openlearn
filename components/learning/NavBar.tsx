@@ -68,7 +68,7 @@ export function NavBar() {
     <nav className="sticky top-0 z-50 bg-white/80 dark:bg-neutral-900/80 backdrop-blur-lg border-b border-neutral-200 dark:border-neutral-800">
       <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2 shrink-0">
-          <img src="/logo-biodockify.svg" alt="BioDockify" className="h-8 w-auto" />
+          
           <span className="font-bold text-neutral-900 dark:text-white hidden sm:inline">BioDockify Learn</span>
         </Link>
 
