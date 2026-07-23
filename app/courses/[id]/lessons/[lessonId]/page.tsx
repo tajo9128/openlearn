@@ -1,9 +1,13 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, ArrowRight, CheckCircle, BookOpen, Clock, MessageSquare } from 'lucide-react';
+import {
+  ArrowLeft, ArrowRight, CheckCircle, BookOpen, Clock, MessageSquare,
+  Play, Sparkles, Loader2, Download, Eye, FlaskConical, AlertCircle,
+} from 'lucide-react';
+import { getCompletionStatus, attemptAutoComplete, WatchTimer } from '@/lib/learning/auto-complete';
 
 export default function LessonPage() {
   const { id, lessonId } = useParams();
@@ -15,13 +19,22 @@ export default function LessonPage() {
   const [aiQuestion, setAiQuestion] = useState('');
   const [aiAnswer, setAiAnswer] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
-  const [codingExercises, setCodingExercises] = useState<any[]>([]);
-  const startTime = useRef(Date.now());
-  const userId =
-    typeof window !== 'undefined'
-      ? localStorage.getItem('biodockify_user_id') ?? 'demo-user'
-      : 'demo-user';
 
+  // Classroom generation state
+  const [generating, setGenerating] = useState(false);
+  const [genProgress, setGenProgress] = useState('');
+  const [classroomId, setClassroomId] = useState<string | null>(null);
+
+  // Watch time state
+  const [watchSeconds, setWatchSeconds] = useState(0);
+  const [completionStatus, setCompletionStatus] = useState<any>(null);
+  const timerRef = useRef<WatchTimer | null>(null);
+
+  const userId = typeof window !== 'undefined'
+    ? localStorage.getItem('biodockify_user_id') ?? 'demo-user'
+    : 'demo-user';
+
+  // Fetch lesson + course data
   useEffect(() => {
     if (!id) return;
     fetch(`/api/learning/courses/${id}`)
@@ -32,52 +45,87 @@ export default function LessonPage() {
         const allLessons = d.modules?.flatMap((m: any) => m.lessons ?? []) ?? [];
         const found = allLessons.find((l: any) => l.id === lessonId);
         setLesson(found);
-        // Fetch coding exercises
-        fetch(`/api/learning/exercises?lesson_id=${lessonId}`)
-          .then((r) => r.json())
-          .then((d) => setCodingExercises((d.exercises ?? []).filter((e: any) => e.exercise_type === 'coding')))
-          .catch(() => {});
+        if (found?.classroom_id) setClassroomId(found.classroom_id);
+
         // Mark as in_progress
         if (found) {
           fetch('/api/learning/progress', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              user_id: userId,
-              lesson_id: lessonId,
-              course_id: id,
-              status: 'in_progress',
+              user_id: userId, lesson_id: lessonId, course_id: id, status: 'in_progress',
             }),
-          }).catch(console.error);
+          }).catch(() => {});
         }
       })
       .catch(console.error)
       .finally(() => setLoading(false));
   }, [id, lessonId, userId]);
 
+  // Track watch time + completion status
+  useEffect(() => {
+    if (!lesson) return;
+
+    const timer = new WatchTimer(lessonId as string, (total) => {
+      setWatchSeconds(total);
+      // Re-check completion
+      const status = getCompletionStatus(
+        lessonId as string,
+        lesson.duration_minutes ?? 15,
+        false, // hasExercises checked separately
+      );
+      setCompletionStatus(status);
+    });
+    timerRef.current = timer;
+    timer.start();
+
+    // Initial status
+    const status = getCompletionStatus(
+      lessonId as string,
+      lesson.duration_minutes ?? 15,
+      false,
+    );
+    setCompletionStatus(status);
+
+    return () => timer.stop();
+  }, [lesson, lessonId]);
+
   const allLessons = modules.flatMap((m: any) => m.lessons ?? []);
   const currentIndex = allLessons.findIndex((l: any) => l.id === lessonId);
   const prevLesson = currentIndex > 0 ? allLessons[currentIndex - 1] : null;
   const nextLesson = currentIndex < allLessons.length - 1 ? allLessons[currentIndex + 1] : null;
 
-  const markComplete = async () => {
-    const timeSpent = Math.round((Date.now() - startTime.current) / 1000);
-    await fetch('/api/learning/progress', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        user_id: userId,
-        lesson_id: lessonId,
-        course_id: id,
-        status: 'completed',
-        time_spent_seconds: timeSpent,
-      }),
-    });
-    if (nextLesson) {
-      router.push(`/courses/${id}/lessons/${nextLesson.id}`);
+  // Generate classroom from lesson content
+  const handleGenerateClassroom = async () => {
+    if (!lesson || generating) return;
+    setGenerating(true);
+    setGenProgress('Preparing lesson content...');
+
+    try {
+      const res = await fetch('/api/learning/classroom/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lesson_id: lessonId, course_id: id }),
+      });
+      const data = await res.json();
+
+      if (data.success && data.classroom_id) {
+        setClassroomId(data.classroom_id);
+        // Update lesson in local state
+        setLesson((prev: any) => ({ ...prev, classroom_id: data.classroom_id }));
+        setGenProgress('');
+        // Open classroom in new tab
+        window.open(`/classroom/${data.classroom_id}`, '_blank');
+      } else {
+        setGenProgress('Failed: ' + (data.error ?? 'Unknown error'));
+      }
+    } catch (e) {
+      setGenProgress('Error: ' + String(e));
     }
+    setGenerating(false);
   };
 
+  // AI Tutor
   const askAI = async () => {
     if (!aiQuestion.trim()) return;
     setAiLoading(true);
@@ -90,7 +138,7 @@ export default function LessonPage() {
           messages: [
             {
               role: 'system',
-              content: `You are a helpful AI tutor for a pharmaceutical research course. The student is studying: "${lesson?.title}". Course: "${course?.title}". Answer clearly and concisely.`,
+              content: `You are a helpful AI tutor. The student is studying: "${lesson?.title}". Course: "${course?.title}". Answer clearly and concisely.`,
             },
             { role: 'user', content: aiQuestion },
           ],
@@ -99,9 +147,23 @@ export default function LessonPage() {
       const data = await res.json();
       setAiAnswer(data.content ?? data.message ?? 'Could not process that question.');
     } catch {
-      setAiAnswer('Sorry, the AI tutor is unavailable. Please try again.');
+      setAiAnswer('Sorry, the AI tutor is unavailable.');
     }
     setAiLoading(false);
+  };
+
+  // Auto-complete the lesson
+  const handleAutoComplete = async () => {
+    const completed = await attemptAutoComplete(
+      lessonId as string,
+      id as string,
+      userId,
+      lesson?.duration_minutes ?? 15,
+      false,
+    );
+    if (completed) {
+      setCompletionStatus((prev: any) => ({ ...prev, canComplete: true }));
+    }
   };
 
   if (loading) {
@@ -120,6 +182,10 @@ export default function LessonPage() {
     );
   }
 
+  const watchPercent = completionStatus?.watchPercent ?? 0;
+  const watchComplete = completionStatus?.watchComplete ?? false;
+  const expectedMinutes = lesson.duration_minutes ?? 15;
+
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950">
       {/* Top nav */}
@@ -131,9 +197,22 @@ export default function LessonPage() {
           >
             <ArrowLeft className="w-4 h-4" /> Back to {course?.title ?? 'Course'}
           </Link>
-          <span className="text-sm text-neutral-400">
-            Lesson {currentIndex + 1} of {allLessons.length}
-          </span>
+          <div className="flex items-center gap-3">
+            {/* Watch progress */}
+            <div className="flex items-center gap-2 text-xs text-neutral-400">
+              <Eye className="w-3.5 h-3.5" />
+              <span>{Math.floor(watchSeconds / 60)}/{expectedMinutes} min</span>
+              <div className="w-20 h-1.5 bg-neutral-200 dark:bg-neutral-700 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-emerald-500 rounded-full transition-all"
+                  style={{ width: `${Math.min(100, watchPercent)}%` }}
+                />
+              </div>
+            </div>
+            <span className="text-sm text-neutral-400">
+              Lesson {currentIndex + 1} of {allLessons.length}
+            </span>
+          </div>
         </div>
       </div>
 
@@ -148,49 +227,137 @@ export default function LessonPage() {
               <BookOpen className="w-4 h-4" /> {lesson.content_type}
             </span>
             <span className="flex items-center gap-1">
-              <Clock className="w-4 h-4" /> {lesson.duration_minutes} min
+              <Clock className="w-4 h-4" /> {expectedMinutes} min
             </span>
           </div>
         </div>
 
-        {/* Lesson content */}
-        <div className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-8 mb-8">
-          <div className="prose dark:prose-invert max-w-none">
-            {lesson.content ? (
-              <div dangerouslySetInnerHTML={{ __html: lesson.content }} />
-            ) : (
-              <div className="text-center py-12 text-neutral-400">
-                <BookOpen className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                <p>Lesson content will appear here</p>
+        {/* Classroom Section — The key Coursera-like feature */}
+        <div className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-6 mb-8">
+          <h3 className="flex items-center gap-2 font-semibold text-neutral-900 dark:text-white mb-4">
+            <Sparkles className="w-5 h-5 text-emerald-500" /> Interactive Classroom
+          </h3>
+
+          {classroomId ? (
+            /* Classroom exists — show watch/launch buttons */
+            <div className="space-y-4">
+              <p className="text-sm text-neutral-500">
+                Your interactive classroom is ready. Open it to view slides, quizzes, and AI-powered content.
+              </p>
+              <div className="flex flex-wrap gap-3">
+                <a
+                  href={`/classroom/${classroomId}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors text-sm font-medium"
+                >
+                  <Play className="w-4 h-4" /> Watch Classroom
+                </a>
+                <a
+                  href={`/classroom/${classroomId}`}
+                  target="_blank"
+                  className="flex items-center gap-2 px-4 py-2.5 border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors text-sm"
+                >
+                  <Download className="w-4 h-4" /> Full Screen
+                </a>
               </div>
-            )}
-          </div>
+
+              {/* Watch progress bar */}
+              <div className="mt-4">
+                <div className="flex justify-between text-xs text-neutral-500 mb-1">
+                  <span>Watch Progress</span>
+                  <span>{watchPercent}%</span>
+                </div>
+                <div className="w-full h-2 bg-neutral-200 dark:bg-neutral-700 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-emerald-500 rounded-full transition-all duration-500"
+                    style={{ width: `${Math.min(100, watchPercent)}%` }}
+                  />
+                </div>
+              </div>
+
+              {/* Status indicators */}
+              <div className="flex gap-4 text-xs">
+                <span className={`flex items-center gap-1 ${watchComplete ? 'text-emerald-600' : 'text-neutral-400'}`}>
+                  {watchComplete ? <CheckCircle className="w-3.5 h-3.5" /> : <Clock className="w-3.5 h-3.5" />}
+                  {watchComplete ? 'Viewing complete' : `${Math.ceil((expectedMinutes * 60 * 0.8 - watchSeconds) / 60)} min remaining`}
+                </span>
+              </div>
+            </div>
+          ) : generating ? (
+            /* Generating in progress */
+            <div className="text-center py-8">
+              <Loader2 className="w-10 h-10 animate-spin text-emerald-500 mx-auto mb-4" />
+              <p className="text-neutral-700 dark:text-neutral-300 font-medium mb-1">
+                Generating your interactive classroom...
+              </p>
+              <p className="text-sm text-neutral-500">{genProgress || 'This may take 1-2 minutes'}</p>
+              <div className="mt-4 w-64 mx-auto h-1.5 bg-neutral-200 dark:bg-neutral-700 rounded-full overflow-hidden">
+                <div className="h-full bg-emerald-500 rounded-full animate-pulse" style={{ width: '60%' }} />
+              </div>
+            </div>
+          ) : (
+            /* No classroom yet — show generate button */
+            <div className="text-center py-6">
+              <Sparkles className="w-12 h-12 text-neutral-300 dark:text-neutral-600 mx-auto mb-4" />
+              <p className="text-neutral-600 dark:text-neutral-400 mb-4">
+                Generate an interactive classroom with slides, quizzes, and AI-powered explanations for this lesson.
+              </p>
+              <button
+                onClick={handleGenerateClassroom}
+                className="flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors text-sm font-medium mx-auto"
+              >
+                <Sparkles className="w-4 h-4" /> Generate Interactive Classroom
+              </button>
+            </div>
+          )}
         </div>
 
-        {/* Practice Lab */}
-        {codingExercises.length > 0 && (
-          <div className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-6 mb-8">
-            <h3 className="flex items-center gap-2 font-semibold text-neutral-900 dark:text-white mb-4">
-              <FlaskConical className="w-5 h-5 text-emerald-500" /> Practice Lab
+        {/* Practice Lab — appears after watch threshold */}
+        {watchComplete && (
+          <div className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-6 mb-8 border-l-4 border-emerald-500">
+            <h3 className="flex items-center gap-2 font-semibold text-neutral-900 dark:text-white mb-2">
+              <FlaskConical className="w-5 h-5 text-emerald-500" /> Practice Lab Unlocked
             </h3>
-            <p className="text-sm text-neutral-500 mb-4">Test your knowledge with hands-on coding exercises.</p>
-            <div className="space-y-3">
-              {codingExercises.map((ex: any) => (
-                <Link
-                  key={ex.id}
-                  href={`/courses/${id}/lessons/${lessonId}/practice`}
-                  className="flex items-center justify-between p-4 rounded-lg border border-neutral-200 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <FlaskConical className="w-5 h-5 text-emerald-500" />
-                    <div>
-                      <p className="font-medium text-neutral-900 dark:text-white">{ex.title}</p>
-                      <p className="text-xs text-neutral-500">{ex.difficulty} \u2022 {ex.points} points</p>
-                    </div>
-                  </div>
-                  <span className="text-sm text-emerald-600 hover:underline">Start</span>
-                </Link>
-              ))}
+            <p className="text-sm text-neutral-500 mb-4">
+              Great job watching the lesson! Now test your knowledge with hands-on practice exercises.
+            </p>
+            <Link
+              href={`/courses/${id}/lessons/${lessonId}/practice`}
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+            >
+              <FlaskConical className="w-4 h-4" /> Start Practice
+            </Link>
+          </div>
+        )}
+
+        {/* Completion status banner */}
+        {watchComplete && (
+          <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-xl border border-emerald-200 dark:border-emerald-800 p-4 mb-8">
+            <div className="flex items-center gap-3">
+              <CheckCircle className="w-5 h-5 text-emerald-600" />
+              <div>
+                <p className="font-medium text-emerald-800 dark:text-emerald-300">Lesson viewing complete!</p>
+                <p className="text-sm text-emerald-600 dark:text-emerald-400">
+                  The Brain will auto-mark this as complete once you finish the practice exercises.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Lesson content (fallback if no classroom) */}
+        {!classroomId && (
+          <div className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-8 mb-8">
+            <div className="prose dark:prose-invert max-w-none">
+              {lesson.content ? (
+                <div dangerouslySetInnerHTML={{ __html: lesson.content }} />
+              ) : (
+                <div className="text-center py-12 text-neutral-400">
+                  <BookOpen className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                  <p>Generate the interactive classroom to view the lesson content.</p>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -236,12 +403,14 @@ export default function LessonPage() {
           ) : (
             <div />
           )}
-          <button
-            onClick={markComplete}
-            className="flex items-center gap-2 px-6 py-2.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors text-sm font-medium"
-          >
-            <CheckCircle className="w-4 h-4" /> Mark Complete {nextLesson && '& Next'}
-          </button>
+          {nextLesson && (
+            <Link
+              href={`/courses/${id}/lessons/${nextLesson.id}`}
+              className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors text-sm font-medium"
+            >
+              {nextLesson.title} <ArrowRight className="w-4 h-4" />
+            </Link>
+          )}
         </div>
       </div>
     </div>
