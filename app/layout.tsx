@@ -20,9 +20,12 @@ const inter = localFont({
 });
 
 export const metadata: Metadata = {
-  title: 'BioDockify Learn',
-  description:
-    'The open-source AI interactive classroom. Upload a PDF to instantly generate an immersive, multi-agent learning experience.',
+  title: 'BioDockify Learn - AI-Powered Pharmaceutical Education',
+  description: 'Master pharmaceutical research with AI-powered courses, Python coding exercises, molecular modeling, and interactive learning.',
+  icons: {
+    icon: '/favicon.ico',
+    apple: '/apple-icon.png',
+  },
 };
 
 export default function RootLayout({
