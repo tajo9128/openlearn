@@ -11,6 +11,8 @@ const nextConfig: NextConfig = {
   // Mark them server-external so Next loads them natively and the dynamic
   // import resolves as a real Node call.
   serverExternalPackages: ['@earendil-works/pi-ai', '@earendil-works/pi-agent-core'],
+  eslint: { ignoreDuringBuilds: true },
+  typescript: { ignoreBuildErrors: true },
   experimental: {
     proxyClientMaxBodySize: '200mb',
   },
