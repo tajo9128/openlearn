@@ -23,8 +23,8 @@ export const metadata: Metadata = {
   title: 'BioDockify Learn - AI-Powered Pharmaceutical Education',
   description: 'Master pharmaceutical research with AI-powered courses, Python coding exercises, molecular modeling, and interactive learning.',
   icons: {
-    icon: '/favicon.ico',
-    apple: '/apple-icon.png',
+    icon: [{ url: "/favicon.svg", type: "image/svg+xml" }, { url: "/favicon.ico", sizes: "any" }],
+    
   },
 };
 
