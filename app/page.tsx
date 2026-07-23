@@ -560,9 +560,7 @@ function HomePage() {
         )}
       >
         {/* ── Logo ── */}
-        <motion.img
-          src="/logo-horizontal-biodockify.svg"
-          alt="BioDockify Learn"
+        <motion.h1
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{
@@ -571,8 +569,12 @@ function HomePage() {
             stiffness: 200,
             damping: 20,
           }}
-          className="h-12 md:h-16 mb-2 -ml-2 md:-ml-3"
-        />
+          className="text-3xl md:text-5xl font-extrabold tracking-tight mb-2"
+        >
+          <span className="text-neutral-900 dark:text-white">Bio</span>
+          <span className="text-emerald-600">Dockify</span>
+          <span className="text-neutral-400 dark:text-neutral-500 font-medium text-xl md:text-2xl ml-2">Learn</span>
+        </motion.h1>
 
         {/* ── Slogan ── */}
         <motion.p
