@@ -1,13 +1,13 @@
 import { type NextRequest } from 'next/server';
 import { apiSuccess, apiError, API_ERROR_CODES } from '@/lib/server/api-response';
-import { supabaseQuerySingle, supabaseUpsert, TABLES } from '@/lib/learning/supabase-client';
+import { supabaseQuerySingle, supabaseQuery, supabaseUpsert, TABLES } from '@/lib/learning/supabase-client';
 import { createLogger } from '@/lib/logger';
 
 const log = createLogger('Classroom Generate API');
 
 /**
  * POST /api/learning/classroom/generate
- * Start classroom generation (async — returns jobId immediately).
+ * Generate an OpenMAIC classroom from a lesson with TTS audio.
  */
 export async function POST(request: NextRequest) {
   try {
@@ -54,15 +54,19 @@ export async function POST(request: NextRequest) {
       allLessons = data ?? [];
     }
 
-    // Build requirement
+    // Build requirement with Dr. Tajuddin as instructor
     const requirement = buildRequirement(lesson, course, allLessons);
 
-    // Start generation job
+    // Start generation job with TTS and agent profiles
     const baseUrl = 'http://localhost:3000';
     const genRes = await fetch(`${baseUrl}/api/generate-classroom`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ requirement, agentMode: 'generate' }),
+      body: JSON.stringify({
+        requirement,
+        agentMode: 'generate',
+        enableTTS: true,
+      }),
     });
 
     if (!genRes.ok) {
@@ -88,7 +92,7 @@ export async function POST(request: NextRequest) {
       return apiError(API_ERROR_CODES.UPSTREAM_ERROR, 504, result.error ?? 'Generation timed out');
     }
 
-    // Otherwise return jobId immediately (async mode)
+    // Otherwise return jobId immediately
     return apiSuccess({
       job_id: jobId,
       poll_url: `/api/generate-classroom/${jobId}`,
@@ -130,8 +134,24 @@ function buildRequirement(lesson: any, course: any, allLessons: any[]): string {
   const otherTopics = allLessons.filter((l) => l.id !== lesson.id).slice(0, 10).map((l) => `- ${l.title}`).join('\n');
 
   return `Create an interactive classroom lesson about: "${lesson.title}"
-Course: "${course?.title ?? ''}"
-${otherTopics ? `Other topics: ${otherTopics}` : ''}
-Content: ${content.substring(0, 4000)}
-Include quizzes and interactive examples. Duration: ${lesson.duration_minutes ?? 15} min.`;
+
+This lesson is part of the course: "${course?.title ?? ''}"
+Course description: ${course?.description ?? ''}
+
+The instructor for this course is Dr. Tajuddin, a pharmaceutical research expert and educator.
+Create agent profiles where the main teacher/agent is named "Dr. Tajuddin" with the role of instructor.
+
+Lesson content to teach:
+${content.substring(0, 5000)}
+
+Other topics in this course:
+${otherTopics}
+
+Requirements:
+- Include voice narration (TTS) for all slides
+- The speaker should be introduced as Dr. Tajuddin
+- Include interactive quiz questions
+- Use code examples where appropriate
+- Target duration: ${lesson.duration_minutes ?? 15} minutes
+- Language: English`;
 }
