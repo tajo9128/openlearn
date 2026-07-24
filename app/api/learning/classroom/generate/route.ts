@@ -1,17 +1,19 @@
 import { type NextRequest } from 'next/server';
 import { apiSuccess, apiError, API_ERROR_CODES } from '@/lib/server/api-response';
-import { supabaseQuerySingle, supabaseQuery, supabaseUpsert, TABLES } from '@/lib/learning/supabase-client';
+import { supabaseQuerySingle, supabaseQuery, TABLES } from '@/lib/learning/supabase-client';
 import { createLogger } from '@/lib/logger';
 
 const log = createLogger('Classroom Generate API');
 
 /**
  * POST /api/learning/classroom/generate
- * Generate an OpenMAIC classroom from a lesson with TTS audio.
+ * Start classroom generation — returns jobId immediately.
+ * Client polls /api/generate-classroom/{jobId} for status.
+ * When status=succeeded, save classroom_id to lesson.
  */
 export async function POST(request: NextRequest) {
   try {
-    const { lesson_id, course_id, wait } = await request.json();
+    const { lesson_id, course_id } = await request.json();
 
     if (!lesson_id || !course_id) {
       return apiError(API_ERROR_CODES.MISSING_REQUIRED_FIELD, 400, 'Missing lesson_id or course_id');
@@ -54,19 +56,15 @@ export async function POST(request: NextRequest) {
       allLessons = data ?? [];
     }
 
-    // Build requirement with Dr. Tajuddin as instructor
+    // Build requirement with Dr. Tajuddin + 15 slides
     const requirement = buildRequirement(lesson, course, allLessons);
 
-    // Start generation job with TTS and agent profiles
+    // Start generation job
     const baseUrl = 'http://localhost:3000';
     const genRes = await fetch(`${baseUrl}/api/generate-classroom`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        requirement,
-        agentMode: 'generate',
-        enableTTS: true,
-      }),
+      body: JSON.stringify({ requirement, agentMode: 'generate', enableTTS: true }),
     });
 
     if (!genRes.ok) {
@@ -76,27 +74,13 @@ export async function POST(request: NextRequest) {
     }
 
     const genData = await genRes.json();
-    const jobId = genData.jobId;
 
-    // If wait=true, poll until done (up to 15 minutes)
-    if (wait) {
-      const result = await pollForCompletion(baseUrl, jobId, 180);
-      if (result.classroomId) {
-        await supabaseUpsert(TABLES.LESSONS, { id: lesson_id, classroom_id: result.classroomId }, 'id');
-        return apiSuccess({
-          classroom_id: result.classroomId,
-          url: `/classroom/${result.classroomId}`,
-          cached: false,
-        });
-      }
-      return apiError(API_ERROR_CODES.UPSTREAM_ERROR, 504, result.error ?? 'Generation timed out');
-    }
-
-    // Otherwise return jobId immediately
+    // Return job ID immediately — client/batch script polls for completion
     return apiSuccess({
-      job_id: jobId,
-      poll_url: `/api/generate-classroom/${jobId}`,
-      message: 'Generation started. Poll the poll_url for status.',
+      job_id: genData.jobId,
+      poll_url: `/api/generate-classroom/${genData.jobId}`,
+      save_url: `/api/learning/classroom/save`,
+      message: 'Generation started. Poll poll_url until status=succeeded, then POST to save_url with {lesson_id, classroom_id}.',
     });
   } catch (error) {
     log.error('Classroom generation failed:', error);
@@ -109,49 +93,23 @@ export async function POST(request: NextRequest) {
   }
 }
 
-async function pollForCompletion(baseUrl: string, jobId: string, maxPolls: number) {
-  for (let i = 0; i < maxPolls; i++) {
-    await new Promise((r) => setTimeout(r, 5000));
-    try {
-      const res = await fetch(`${baseUrl}/api/generate-classroom/${jobId}`);
-      const data = await res.json();
-
-      if (data.status === 'succeeded' && (data.result?.classroomId || data.result?.id)) {
-        return { classroomId: data.result?.classroomId || data.result?.id };
-      }
-      if (data.status === 'failed') {
-        return { classroomId: null, error: data.error };
-      }
-    } catch (e) {
-      log.warn('Poll error:', e);
-    }
-  }
-  return { classroomId: null, error: 'Timeout' };
-}
-
 function buildRequirement(lesson: any, course: any, allLessons: any[]): string {
   const content = (lesson.content ?? '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
-  const otherTopics = allLessons.filter((l) => l.id !== lesson.id).slice(0, 10).map((l) => `- ${l.title}`).join('\n');
+  const otherTopics = allLessons.filter((l: any) => l.id !== lesson.id).slice(0, 10).map((l: any) => '- ' + l.title).join('\n');
 
-  return `Create an interactive classroom lesson about: "${lesson.title}"
-
-This lesson is part of the course: "${course?.title ?? ''}"
-Course description: ${course?.description ?? ''}
-
-The instructor for this course is Dr. Tajuddin, a pharmaceutical research expert and educator.
-Create agent profiles where the main teacher/agent is named "Dr. Tajuddin" with the role of instructor.
-
-Lesson content to teach:
-${content.substring(0, 5000)}
-
-Other topics in this course:
-${otherTopics}
-
-Requirements:
-- Include voice narration (TTS) for all slides
-- The speaker should be introduced as Dr. Tajuddin
-- Include interactive quiz questions
-- Use code examples where appropriate
-- Target duration: ${lesson.duration_minutes ?? 15} minutes
-- Language: English`;
+  return 'Create an interactive classroom lesson about: "' + lesson.title + '"\n\n' +
+    'This lesson is part of the course: "' + (course?.title ?? '') + '"\n' +
+    'Course description: ' + (course?.description ?? '') + '\n\n' +
+    'The instructor for this course is Dr. Tajuddin, a pharmaceutical research expert and educator.\n' +
+    'Create agent profiles where the main teacher/agent is named "Dr. Tajuddin" with the role of instructor.\n\n' +
+    'Lesson content to teach:\n' + content.substring(0, 5000) + '\n\n' +
+    'Other topics in this course:\n' + otherTopics + '\n\n' +
+    'Requirements:\n' +
+    '- Include voice narration (TTS) for all slides\n' +
+    '- The speaker should be introduced as Dr. Tajuddin\n' +
+    '- Include interactive quiz questions\n' +
+    '- Use code examples where appropriate\n' +
+    '- Create EXACTLY 15 slides/scenes - this is mandatory\n' +
+    '- Target duration: ' + (lesson.duration_minutes ?? 15) + ' minutes\n' +
+    '- Language: English';
 }
