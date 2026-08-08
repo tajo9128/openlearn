@@ -15,7 +15,10 @@ import {
   Repeat,
   Maximize2,
   Minimize2,
+  Rewind,
+  FastForward,
 } from 'lucide-react';
+import { formatTimestamp } from '@/lib/utils/format';
 import { cn } from '@/lib/utils';
 import { useStageStore } from '@/lib/store';
 import { useI18n } from '@/lib/hooks/use-i18n';
@@ -54,6 +57,12 @@ export interface CanvasToolbarProps {
   readonly onToggleAutoPlay?: () => void;
   readonly playbackSpeed?: number;
   readonly onCycleSpeed?: () => void;
+  // Seek bar / timestamps
+  readonly currentTimeMs?: number;
+  readonly totalDurationMs?: number;
+  readonly onSeek?: (ms: number) => void;
+  readonly onJumpForward10?: () => void;
+  readonly onJumpBackward10?: () => void;
 }
 
 /* Compact control button */
@@ -115,6 +124,11 @@ export function CanvasToolbar({
   onToggleAutoPlay,
   playbackSpeed = 1,
   onCycleSpeed,
+  currentTimeMs = 0,
+  totalDurationMs = 0,
+  onSeek,
+  onJumpForward10,
+  onJumpBackward10,
 }: CanvasToolbarProps) {
   const { t } = useI18n();
   const remainingSoftCloseSeconds = useSoftCloseCountdown(softCloseDeadline);
@@ -278,6 +292,74 @@ export function CanvasToolbar({
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
+          )}
+
+          <CtrlDivider />
+
+          {/* Seek bar + timestamps + ±10s */}
+          {totalDurationMs > 0 && (
+            <div className="flex items-center gap-1 px-1">
+              {/* Backward 10s */}
+              {onJumpBackward10 && (
+                <button
+                  onClick={onJumpBackward10}
+                  className={cn(
+                    ctrlBtn,
+                    'w-6 h-6 text-gray-500 dark:text-gray-400 hover:text-violet-600 dark:hover:text-violet-400',
+                  )}
+                  aria-label="Back 10 seconds"
+                  title="Back 10s (J)"
+                >
+                  <Rewind className="w-3 h-3" />
+                </button>
+              )}
+
+              {/* Timestamp */}
+              <span className="text-[10px] text-gray-400 dark:text-gray-500 tabular-nums select-none font-medium min-w-[28px] text-center">
+                {formatTimestamp(currentTimeMs)}
+              </span>
+
+              {/* Scrubber */}
+              <input
+                type="range"
+                min={0}
+                max={totalDurationMs}
+                step={100}
+                value={Math.min(currentTimeMs, totalDurationMs)}
+                onChange={(e) => onSeek?.(parseFloat(e.target.value))}
+                className={cn(
+                  'appearance-none cursor-pointer h-1 rounded-full',
+                  'min-w-[80px] max-w-[200px] flex-1',
+                  'bg-gray-200 dark:bg-gray-700',
+                  '[&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-2.5 [&::-webkit-slider-thumb]:h-2.5',
+                  '[&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-violet-500 [&::-webkit-slider-thumb]:dark:bg-violet-400',
+                  '[&::-webkit-slider-thumb]:shadow-sm [&::-webkit-slider-thumb]:cursor-pointer',
+                  '[&::-moz-range-thumb]:w-2.5 [&::-moz-range-thumb]:h-2.5',
+                  '[&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-violet-500 [&::-moz-range-thumb]:border-0',
+                )}
+                aria-label="Seek"
+              />
+
+              {/* Total duration */}
+              <span className="text-[10px] text-gray-400 dark:text-gray-500 tabular-nums select-none font-medium min-w-[28px] text-center">
+                {formatTimestamp(totalDurationMs)}
+              </span>
+
+              {/* Forward 10s */}
+              {onJumpForward10 && (
+                <button
+                  onClick={onJumpForward10}
+                  className={cn(
+                    ctrlBtn,
+                    'w-6 h-6 text-gray-500 dark:text-gray-400 hover:text-violet-600 dark:hover:text-violet-400',
+                  )}
+                  aria-label="Forward 10 seconds"
+                  title="Forward 10s (L)"
+                >
+                  <FastForward className="w-3 h-3" />
+                </button>
+              )}
+            </div>
           )}
 
           <CtrlDivider />

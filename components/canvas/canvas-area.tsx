@@ -51,6 +51,7 @@ export function CanvasArea({
   isCourseComplete,
   isGenerationFailed,
   onRetryGeneration,
+  ...toolbarRest
 }: CanvasAreaProps) {
   const { t } = useI18n();
   const showControls = mode === 'playback' && !whiteboardOpen;
@@ -273,6 +274,7 @@ export function CanvasArea({
           showStopDiscussion={showStopDiscussion}
           onStopDiscussion={onStopDiscussion}
           onContinueDiscussion={onContinueDiscussion}
+          {...toolbarRest}
         />
       )}
     </div>

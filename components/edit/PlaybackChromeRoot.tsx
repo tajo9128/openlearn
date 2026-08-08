@@ -213,6 +213,7 @@ export const PlaybackChromeRoot = forwardRef<PlaybackChromeRootHandle, PlaybackC
 
     const engineRef = useRef<PlaybackEngine | null>(null);
     const audioPlayerRef = useRef(createAudioPlayer());
+    const [currentTimeMs, setCurrentTimeMs] = useState(0);
     const chatAreaRef = useRef<ChatAreaRef>(null);
     const lectureSessionIdRef = useRef<string | null>(null);
     const lectureActionCounterRef = useRef(0);
@@ -853,6 +854,86 @@ export const PlaybackChromeRoot = forwardRef<PlaybackChromeRootHandle, PlaybackC
       audioPlayerRef.current.setPlaybackRate(playbackSpeed);
     }, [playbackSpeed]);
 
+    // ── Seek bar: time tracking ──
+    // Compute scene timeline for timestamps + seek
+    const sceneTimelineMs = useMemo(() => {
+        if (!currentScene?.actions) return [];
+        const speed = playbackSpeed || 1;
+        const segments: { startMs: number; durationMs: number; actionIndex: number }[] = [];
+        let elapsed = 0;
+        currentScene.actions.forEach((action: any, idx: number) => {
+            if (action.type !== 'speech') return;
+            const text = action.text || action.content || '';
+            let durMs: number;
+            if (action.audioId) {
+                // Estimate from text if we don't have real duration cached
+                durMs = Math.max(2000, (text.split(/\s+/).length / (250 * speed)) * 60000);
+            } else {
+                durMs = Math.max(2000, (text.split(/\s+/).length / (250 * speed)) * 60000);
+            }
+            segments.push({ startMs: elapsed, durationMs: durMs, actionIndex: idx });
+            elapsed += durMs;
+        });
+        return segments;
+    }, [currentScene, playbackSpeed]);
+
+    const totalSceneDurationMs = sceneTimelineMs.length > 0
+        ? sceneTimelineMs[sceneTimelineMs.length - 1].startMs + sceneTimelineMs[sceneTimelineMs.length - 1].durationMs
+        : 0;
+
+    // Poll audio player for current time during playback
+    useEffect(() => {
+        if (engineMode !== 'playing') return;
+        const interval = setInterval(() => {
+            const actionIdx = currentPlaybackActionIndexRef.current;
+            if (actionIdx === null) return;
+            const audioMs = audioPlayerRef.current.getCurrentTime();
+            // Find the segment for current action
+            const seg = sceneTimelineMs.find(s => s.actionIndex === actionIdx);
+            if (seg) {
+                setCurrentTimeMs(seg.startMs + audioMs);
+            }
+        }, 250);
+        return () => clearInterval(interval);
+    }, [engineMode, sceneTimelineMs]);
+
+    // Reset time when scene changes
+    useEffect(() => {
+        setCurrentTimeMs(0);
+    }, [currentSceneId]);
+
+    // Seek handler
+    const handleSeek = useCallback((ms: number) => {
+        setCurrentTimeMs(ms);
+        // Find nearest speech action segment
+        let nearest = sceneTimelineMs[0];
+        for (const seg of sceneTimelineMs) {
+            if (seg.startMs <= ms) nearest = seg;
+            else break;
+        }
+        if (nearest && engineRef.current) {
+            const offsetWithinSegment = ms - nearest.startMs;
+            engineRef.current.jumpToAction(nearest.actionIndex, { autoplay: engineMode === 'playing' }).then(() => {
+                if (offsetWithinSegment > 500) {
+                    audioPlayerRef.current.seek(offsetWithinSegment);
+                }
+            }).catch(() => {});
+        }
+    }, [sceneTimelineMs, engineMode]);
+
+    // Jump forward/backward 10 seconds
+    const handleJumpForward10 = useCallback(() => {
+        const target = currentTimeMs + 10000;
+        handleSeek(Math.min(target, totalSceneDurationMs));
+    }, [currentTimeMs, totalSceneDurationMs, handleSeek]);
+
+    const handleJumpBackward10 = useCallback(() => {
+        const target = Math.max(0, currentTimeMs - 10000);
+        handleSeek(target);
+    }, [currentTimeMs, handleSeek]);
+
+
+
     /**
      * Handle discussion SSE — POST /api/chat and push events to engine
      */
@@ -1336,6 +1417,11 @@ export const PlaybackChromeRoot = forwardRef<PlaybackChromeRootHandle, PlaybackC
                   ? () => onRetryOutline(generatingOutlines[0].id)
                   : undefined
               }
+              currentTimeMs={currentTimeMs}
+              totalDurationMs={totalSceneDurationMs}
+              onSeek={handleSeek}
+              onJumpForward10={handleJumpForward10}
+              onJumpBackward10={handleJumpBackward10}
             />
           </div>
 

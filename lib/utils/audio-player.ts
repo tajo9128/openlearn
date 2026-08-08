@@ -175,6 +175,19 @@ export class AudioPlayer {
   }
 
   /**
+   * Seek to a specific position (milliseconds)
+   */
+  public seek(ms: number): void {
+    if (this.audio) {
+      try {
+        this.audio.currentTime = Math.max(0, ms / 1000);
+      } catch {
+        // Seeking can fail if metadata not loaded yet — ignore
+      }
+    }
+  }
+
+  /**
    * Set playback ended callback
    */
   public onEnded(callback: () => void): void {
