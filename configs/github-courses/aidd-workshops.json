@@ -1,0 +1,87 @@
+{
+  "repo": "GouldGroup/aidd-workshops",
+  "branch": "main",
+  "course": {
+    "title": "AI in Drug Discovery",
+    "description": "A hands-on workshop series on applying AI and deep learning to drug discovery: molecular datasets and MoleculeNet, molecular fingerprints and featurizations, graph convolutions, model building with TensorFlow and PyTorch, and modeling protein-ligand interactions with atomic convolutions. Taught by an AI instructor with narrated interactive classrooms. Based on the GouldGroup AI in Drug Discovery workshops (github.com/GouldGroup/aidd-workshops), adapted under its open license with attribution.",
+    "category": "ai",
+    "difficulty": "intermediate",
+    "instructor_name": "Dr. Tajuddin",
+    "is_free": true,
+    "price": 0,
+    "duration_hours": 7,
+    "tags": ["ai", "deep-learning", "drug-discovery", "deepchem", "moleculenet", "graph-convolutions"]
+  },
+  "modules": [
+    {
+      "title": "Deep Life Sciences Fundamentals",
+      "lessons": [
+        {
+          "path": "Workshop_1/The_Basic_Tools_of_the_Deep_Life_Sciences.ipynb",
+          "title": "The Basic Tools of the Deep Life Sciences",
+          "duration_minutes": 40
+        },
+        {
+          "path": "Workshop_1/Working_With_Datasets.ipynb",
+          "title": "Working with Datasets",
+          "duration_minutes": 40
+        },
+        {
+          "path": "Workshop_1/An_Introduction_To_MoleculeNet.ipynb",
+          "title": "Introduction to MoleculeNet",
+          "duration_minutes": 40
+        },
+        {
+          "path": "Workshop_1/Molecular_Fingerprints.ipynb",
+          "title": "Molecular Fingerprints",
+          "duration_minutes": 40
+        }
+      ]
+    },
+    {
+      "title": "Featurization and Model Building",
+      "lessons": [
+        {
+          "path": "Workshops_2_3/Going_Deeper_on_Molecular_Featurizations.ipynb",
+          "title": "Going Deeper on Molecular Featurizations",
+          "duration_minutes": 40
+        },
+        {
+          "path": "Workshops_2_3/Introduction_to_Graph_Convolutions.ipynb",
+          "title": "Introduction to Graph Convolutions",
+          "duration_minutes": 40
+        },
+        {
+          "path": "Workshops_2_3/Creating_Models_with_TensorFlow_and_PyTorch.ipynb",
+          "title": "Creating Models with TensorFlow and PyTorch",
+          "duration_minutes": 40
+        },
+        {
+          "path": "Workshops_2_3/Working_With_Splitters.ipynb",
+          "title": "Working with Splitters",
+          "duration_minutes": 40
+        },
+        {
+          "path": "Workshops_2_3/Creating_a_high_fidelity_model_from_experimental_data.ipynb",
+          "title": "High-Fidelity Models from Experimental Data",
+          "duration_minutes": 40
+        }
+      ]
+    },
+    {
+      "title": "Protein-Ligand Interactions",
+      "lessons": [
+        {
+          "path": "Workshop_4/Modeling_Protein_Ligand_Interactions.ipynb",
+          "title": "Modeling Protein-Ligand Interactions",
+          "duration_minutes": 40
+        },
+        {
+          "path": "Workshop_4/Modeling_Protein_Ligand_Interactions_With_Atomic_Convolutions.ipynb",
+          "title": "Atomic Convolutions for Protein-Ligand Modeling",
+          "duration_minutes": 40
+        }
+      ]
+    }
+  ]
+}
