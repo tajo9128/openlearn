@@ -1,17 +1,24 @@
 /**
- * Supabase Auth wrapper — no npm dependency needed.
- * Uses Supabase Auth REST API directly via native fetch.
+ * BioDockify Learn Auth — backed by the main platform's local auth API.
  *
- * Handles: signup, login, email verification, user session.
- * JWT stored in HttpOnly cookie for security.
+ * The Learn platform previously called a long-dead Supabase project, so every
+ * signup/login failed with "fetch failed". It now proxies to the same
+ * /auth endpoints that power www.biodockify.com (local PostgreSQL auth):
+ *
+ *   POST {MAIN_API_URL}/auth/register  (JSON)       -> create account
+ *   POST {MAIN_API_URL}/auth/login     (form)       -> JWT access token
+ *   GET  {MAIN_API_URL}/auth/me        (Bearer)     -> current user
+ *
+ * Students use ONE BioDockify account across the main platform and Learn.
+ * The main platform's JWT carries `sub` (user id), so cookie handling and
+ * extractUserIdFromToken() are unchanged.
  */
 
 import { cookies } from 'next/headers';
 
 // ==================== Config ====================
 
-const SUPABASE_URL = process.env.SUPABASE_URL ?? '';
-const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY ?? '';
+const MAIN_API_URL = process.env.MAIN_API_URL ?? 'http://host.docker.internal:8000';
 const COOKIE_NAME = 'bd_auth_token';
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 7; // 7 days
 
@@ -32,17 +39,19 @@ export interface AuthResult {
   accessToken?: string;
 }
 
-// ==================== Supabase Auth REST API ====================
+// ==================== Main Platform Auth API ====================
 
-const authHeaders = {
-  apikey: SUPABASE_ANON_KEY,
-  Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-  'Content-Type': 'application/json',
-};
+function nameFromEmail(email: string): string {
+  const local = email.split('@')[0] ?? 'Student';
+  return local
+    .replace(/[._-]+/g, ' ')
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
 
 /**
- * Sign up a new user with email/password.
- * Supabase automatically sends a verification email.
+ * Sign up a new student on the main BioDockify platform, then sign them in
+ * immediately (the main platform auto-verifies accounts, so no email-
+ * confirmation dead-end — students land straight in the classroom).
  */
 export async function signUp(
   name: string,
@@ -50,100 +59,80 @@ export async function signUp(
   password: string,
 ): Promise<AuthResult> {
   try {
-    const res = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {
+    const res = await fetch(`${MAIN_API_URL}/auth/register`, {
       method: 'POST',
-      headers: authHeaders,
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         email,
         password,
-        data: { display_name: name },
+        designation: 'Student',
+        organization: 'BioDockify Learn',
       }),
     });
 
-    const data = await res.json();
+    const data = await res.json().catch(() => null);
 
     if (!res.ok) {
-      return {
-        success: false,
-        error: data.msg ?? data.error_description ?? 'Signup failed',
-      };
+      // FastAPI validation errors arrive as an array — flatten to text.
+      let detail = data?.detail ?? 'Signup failed';
+      if (Array.isArray(detail)) {
+        detail = detail.map((d: { msg?: string }) => d?.msg ?? '').filter(Boolean).join('; ') || 'Signup failed';
+      }
+      return { success: false, error: detail };
     }
 
-    // Supabase returns user but may not return access_token if email confirmation is required
-    const user: AuthUser = {
-      id: data.user?.id ?? '',
-      email: data.user?.email ?? email,
-      name: data.user?.user_metadata?.display_name ?? name,
-      emailVerified: data.user?.email_confirmed_at != null,
-      createdAt: data.user?.created_at ?? new Date().toISOString(),
-    };
-
-    return {
-      success: true,
-      user,
-      accessToken: data.access_token ?? undefined,
-    };
+    // Account created — log in right away.
+    return await signIn(email, password);
   } catch (err) {
     return { success: false, error: String(err) };
   }
 }
 
 /**
- * Sign in with email/password.
- * Returns JWT access token on success.
+ * Sign in with email/password via the main platform.
+ * Returns the platform JWT on success.
  */
 export async function signIn(
   email: string,
   password: string,
 ): Promise<AuthResult> {
   try {
-    const res = await fetch(
-      `${SUPABASE_URL}/auth/v1/token?grant_type=password`,
-      {
-        method: 'POST',
-        headers: authHeaders,
-        body: JSON.stringify({ email, password }),
-      },
-    );
+    const body = new URLSearchParams({ username: email, password });
 
-    const data = await res.json();
+    const res = await fetch(`${MAIN_API_URL}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: body.toString(),
+    });
+
+    const data = await res.json().catch(() => null);
 
     if (!res.ok) {
-      return {
-        success: false,
-        error: data.error_description ?? data.msg ?? 'Login failed',
-      };
+      return { success: false, error: data?.detail ?? 'Invalid email or password' };
     }
 
     const user: AuthUser = {
-      id: data.user?.id ?? '',
-      email: data.user?.email ?? email,
-      name: data.user?.user_metadata?.display_name ?? email.split('@')[0],
-      emailVerified: data.user?.email_confirmed_at != null,
-      createdAt: data.user?.created_at ?? new Date().toISOString(),
+      id: data.user_id ?? '',
+      email: data.email ?? email,
+      name: nameFromEmail(data.email ?? email),
+      emailVerified: true,
+      createdAt: new Date().toISOString(),
     };
 
-    return {
-      success: true,
-      user,
-      accessToken: data.access_token,
-    };
+    return { success: true, user, accessToken: data.access_token };
   } catch (err) {
     return { success: false, error: String(err) };
   }
 }
 
 /**
- * Get current user from JWT access token (server-side verification).
+ * Get current user from the platform JWT (verified server-side).
  */
 export async function getUser(accessToken: string): Promise<AuthUser | null> {
   try {
-    const res = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+    const res = await fetch(`${MAIN_API_URL}/auth/me`, {
       method: 'GET',
-      headers: {
-        ...authHeaders,
-        Authorization: `Bearer ${accessToken}`,
-      },
+      headers: { Authorization: `Bearer ${accessToken}` },
     });
 
     if (!res.ok) return null;
@@ -152,9 +141,9 @@ export async function getUser(accessToken: string): Promise<AuthUser | null> {
     return {
       id: data.id ?? '',
       email: data.email ?? '',
-      name: data.user_metadata?.display_name ?? data.email?.split('@')[0] ?? '',
-      emailVerified: data.email_confirmed_at != null,
-      createdAt: data.created_at ?? '',
+      name: data.designation || nameFromEmail(data.email ?? ''),
+      emailVerified: true,
+      createdAt: data.created_at ?? new Date().toISOString(),
     };
   } catch {
     return null;
@@ -162,20 +151,11 @@ export async function getUser(accessToken: string): Promise<AuthUser | null> {
 }
 
 /**
- * Sign out (invalidate token on Supabase side).
+ * Sign out. The main platform is stateless-JWT, so clearing the cookie
+ * (handled by the caller) is the whole logout — nothing to invalidate.
  */
-export async function signOut(accessToken: string): Promise<void> {
-  try {
-    await fetch(`${SUPABASE_URL}/auth/v1/logout`, {
-      method: 'POST',
-      headers: {
-        ...authHeaders,
-        Authorization: `Bearer ${accessToken}`,
-      },
-    });
-  } catch {
-    // Ignore logout errors
-  }
+export async function signOut(_accessToken: string): Promise<void> {
+  void _accessToken;
 }
 
 // ==================== Cookie Helpers ====================
@@ -213,7 +193,7 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
 
 /**
  * Extract user ID from JWT without full verification (for non-critical reads).
- * Use getCurrentUser() for security-sensitive operations.
+ * The main platform's JWT payload carries `sub` (user id).
  */
 export function extractUserIdFromToken(token: string): string | null {
   try {
