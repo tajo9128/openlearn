@@ -313,15 +313,9 @@ async function generateClassroom(baseUrl, lessonId, courseId, logLabel) {
     }
     if (job.status === 'succeeded' && job.result?.classroomId) {
       const classroomId = job.result.classroomId;
-      const saveRes = await fetch(`${baseUrl}/api/learning/classroom/save`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ lesson_id: lessonId, classroom_id: classroomId }),
-      });
-      const save = await saveRes.json();
-      if (!saveRes.ok || !save.saved) {
-        throw new Error(`save failed: ${save.error ?? saveRes.status}`);
-      }
+      // PATCH directly: the app's save route uses upsert, which fails on this
+      // schema (insert-path NOT NULL violation) and swallows the error.
+      await sbPatch('learning_lessons', lessonId, { classroom_id: classroomId });
       console.log(`[gen] ${logLabel}: classroom ${classroomId} saved`);
       return classroomId;
     }
