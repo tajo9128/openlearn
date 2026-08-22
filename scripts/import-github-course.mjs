@@ -254,7 +254,7 @@ async function ensureModule(courseId, title, sortOrder) {
   return sbInsert('learning_modules', { course_id: courseId, title, sort_order: sortOrder });
 }
 
-async function ensureLesson(moduleId, lesson, content, sortOrder) {
+async function ensureLesson(courseId, moduleId, lesson, content, sortOrder) {
   const existing = await sbQuery('learning_lessons', {
     select: '*',
     module_id: `eq.${moduleId}`,
@@ -266,6 +266,7 @@ async function ensureLesson(moduleId, lesson, content, sortOrder) {
     return existing[0];
   }
   const row = await sbInsert('learning_lessons', {
+    course_id: courseId, // NOT NULL in schema, not set by app code
     module_id: moduleId,
     title: lesson.title,
     content,
@@ -365,7 +366,7 @@ for (const [mi, m] of cfg.modules.entries()) {
   const module = await ensureModule(course.id, m.title, mi);
   for (const [li, l] of m.lessons.entries()) {
     const content = await buildLessonContent(cfg, l);
-    const row = await ensureLesson(module.id, l, content, li);
+    const row = await ensureLesson(course.id, module.id, l, content, li);
     lessons.push({ ...l, row });
   }
 }
