@@ -1,0 +1,77 @@
+{
+  "repo": "NIGMS/Structural-Biology-and-Drug-Discovery",
+  "branch": "main",
+  "course": {
+    "title": "Structural Biology & Drug Discovery",
+    "description": "Learn how protein structures drive drug discovery: from protein basics and structure analysis, through molecular docking with AutoDock, to structure-based and peptide-based drug design. Taught by an AI instructor with narrated interactive classrooms. Based on the NIGMS Structural Biology and Drug Discovery module (github.com/NIGMS/Structural-Biology-and-Drug-Discovery), US Government work, available in the public domain.",
+    "category": "pharmacy",
+    "difficulty": "intermediate",
+    "instructor_name": "Dr. Tajuddin",
+    "is_free": true,
+    "price": 0,
+    "duration_hours": 6,
+    "tags": ["structural-biology", "drug-discovery", "docking", "autodock", "protein-structure"]
+  },
+  "modules": [
+    {
+      "title": "Protein Structure",
+      "lessons": [
+        {
+          "path": "submodule1_protein_structure/Submodule_1.1.ipynb",
+          "title": "Protein Basics",
+          "duration_minutes": 40
+        },
+        {
+          "path": "submodule1_protein_structure/Submodule_1.2.ipynb",
+          "title": "Protein Structure Analysis",
+          "duration_minutes": 40
+        },
+        {
+          "path": "submodule1_protein_structure/Submodule_1.3.ipynb",
+          "title": "Protein-Protein Interactions",
+          "duration_minutes": 40
+        }
+      ]
+    },
+    {
+      "title": "Molecular Docking",
+      "lessons": [
+        {
+          "path": "submodule2_docking_protein_interactions/Submodule_2.1_.ipynb",
+          "title": "Introduction to Protein Docking",
+          "duration_minutes": 40
+        },
+        {
+          "path": "submodule2_docking_protein_interactions/Submodule_2.2_.ipynb",
+          "title": "Docking using AutoDock",
+          "duration_minutes": 40
+        },
+        {
+          "path": "submodule2_docking_protein_interactions/Submodule_2.3.ipynb",
+          "title": "3D Ligand Structures & Protein-Protein Docking",
+          "duration_minutes": 40
+        }
+      ]
+    },
+    {
+      "title": "Drug Design",
+      "lessons": [
+        {
+          "path": "submodule3_drug_design/Submodule_3.1.ipynb",
+          "title": "Drug Design Basics",
+          "duration_minutes": 40
+        },
+        {
+          "path": "submodule3_drug_design/Submodule_3.2.ipynb",
+          "title": "Enzyme Drug Design",
+          "duration_minutes": 40
+        },
+        {
+          "path": "submodule3_drug_design/Submodule_3.3.ipynb",
+          "title": "Peptide-Based Drug Design",
+          "duration_minutes": 40
+        }
+      ]
+    }
+  ]
+}

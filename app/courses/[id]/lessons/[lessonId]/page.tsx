@@ -109,20 +109,63 @@ export default function LessonPage() {
       });
       const data = await res.json();
 
-      if (data.success && data.classroom_id) {
-        setClassroomId(data.classroom_id);
-        // Update lesson in local state
-        setLesson((prev: any) => ({ ...prev, classroom_id: data.classroom_id }));
-        setGenProgress('');
-        // Open classroom in new tab
-        window.open(`/classroom/${data.classroom_id}`, '_blank');
-      } else {
+      if (!data.success) {
         setGenProgress('Failed: ' + (data.error ?? 'Unknown error'));
+        setGenerating(false);
+        return;
       }
+
+      // Cached: classroom already exists
+      if (data.classroom_id) {
+        finishGeneration(data.classroom_id);
+        setGenerating(false);
+        return;
+      }
+
+      // Async job: poll until the classroom is ready
+      const pollInterval = data.pollIntervalMs ?? 5000;
+      const deadline = Date.now() + 30 * 60 * 1000;
+      while (Date.now() < deadline) {
+        await new Promise((r) => setTimeout(r, pollInterval));
+        const pollRes = await fetch(data.poll_url);
+        const job = await pollRes.json();
+
+        if (job.status === 'succeeded' && job.result?.classroomId) {
+          // Link classroom to the lesson server-side
+          await fetch('/api/learning/classroom/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ lesson_id: lessonId, classroom_id: job.result.classroomId }),
+          }).catch(() => {});
+          finishGeneration(job.result.classroomId);
+          setGenerating(false);
+          return;
+        }
+        if (job.status === 'failed') {
+          setGenProgress('Failed: ' + (job.error ?? job.message ?? 'Generation failed'));
+          setGenerating(false);
+          return;
+        }
+        if (job.step) {
+          setGenProgress(
+            `Generating classroom... ${job.step.replace(/_/g, ' ')}${job.progress ? ` (${job.progress})` : ''}`,
+          );
+        }
+      }
+      setGenProgress('Failed: generation timed out after 30 minutes');
     } catch (e) {
       setGenProgress('Error: ' + String(e));
     }
     setGenerating(false);
+  };
+
+  const finishGeneration = (newClassroomId: string) => {
+    setClassroomId(newClassroomId);
+    // Update lesson in local state
+    setLesson((prev: any) => ({ ...prev, classroom_id: newClassroomId }));
+    setGenProgress('');
+    // Open classroom in new tab
+    window.open(`/classroom/${newClassroomId}`, '_blank');
   };
 
   // AI Tutor
