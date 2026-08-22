@@ -270,7 +270,7 @@ async function ensureLesson(courseId, moduleId, lesson, content, sortOrder) {
     module_id: moduleId,
     title: lesson.title,
     content,
-    content_type: 'notebook',
+    content_type: 'text', // schema check constraint; all existing lessons use 'text'
     duration_minutes: lesson.duration_minutes ?? 40,
     sort_order: sortOrder,
   });
