@@ -281,7 +281,7 @@ async function ensureLesson(courseId, moduleId, lesson, content, sortOrder) {
 // ==================== Classroom generation ====================
 
 const POLL_INTERVAL_MS = 10_000;
-const JOB_TIMEOUT_MS = 30 * 60_000; // matches job-store stale window
+const JOB_TIMEOUT_MS = 60 * 60_000; // slow LLM providers take 2-4 min per scene × 15 scenes
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
