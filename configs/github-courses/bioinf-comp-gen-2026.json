@@ -1,0 +1,87 @@
+{
+  "repo": "maciek-wisniewski/intro_to_bioinf_and_comp_gen_2026",
+  "branch": "main",
+  "course": {
+    "title": "Bioinformatics & Computational Genomics",
+    "description": "A hands-on 2026 university course on bioinformatics and computational genomics: sequence analysis and alignment, molecular representation and 3D structure, binding affinity, a molecular docking lab with AutoDock Vina, protein dynamics, transcription factors, and 3D genome analysis. Taught by an AI instructor with narrated interactive classrooms. Based on the Introduction to Bioinformatics and Computational Genomics course materials from Warsaw University of Technology (github.com/maciek-wisniewski/intro_to_bioinf_and_comp_gen_2026), adapted with attribution.",
+    "category": "research",
+    "difficulty": "intermediate",
+    "instructor_name": "Dr. Tajuddin",
+    "is_free": true,
+    "price": 0,
+    "duration_hours": 8,
+    "tags": ["bioinformatics", "genomics", "sequence-analysis", "docking", "autodock-vina", "python"]
+  },
+  "modules": [
+    {
+      "title": "Sequences and Alignments",
+      "lessons": [
+        {
+          "path": "notebooks/01-sequences.ipynb",
+          "title": "DNA and Protein Sequences",
+          "duration_minutes": 40
+        },
+        {
+          "path": "notebooks/02-alignment.ipynb",
+          "title": "Sequence Alignment",
+          "duration_minutes": 40
+        }
+      ]
+    },
+    {
+      "title": "Molecular Structure and Docking",
+      "lessons": [
+        {
+          "path": "notebooks/05-molecule_representation.ipynb",
+          "title": "Molecular Representation",
+          "duration_minutes": 40
+        },
+        {
+          "path": "notebooks/6-molecule_in_3d.ipynb",
+          "title": "Molecules in 3D",
+          "duration_minutes": 40
+        },
+        {
+          "path": "notebooks/7-binding_affinity.ipynb",
+          "title": "Binding Affinity",
+          "duration_minutes": 40
+        },
+        {
+          "path": "notebooks/docking_lab.ipynb",
+          "title": "Molecular Docking Lab with AutoDock Vina",
+          "duration_minutes": 40
+        }
+      ]
+    },
+    {
+      "title": "Protein Dynamics and 3D Genomics",
+      "lessons": [
+        {
+          "path": "notebooks/03-protein_dynamics.ipynb",
+          "title": "Protein Dynamics",
+          "duration_minutes": 40
+        },
+        {
+          "path": "notebooks/08-genomics-intro.ipynb",
+          "title": "Introduction to Genomics",
+          "duration_minutes": 40
+        },
+        {
+          "path": "notebooks/09-transcription-factors.ipynb",
+          "title": "Transcription Factors",
+          "duration_minutes": 40
+        },
+        {
+          "path": "notebooks/10-3d-genome.ipynb",
+          "title": "3D Genome — Part 1",
+          "duration_minutes": 40
+        },
+        {
+          "path": "notebooks/11-3d-genome-pt2.ipynb",
+          "title": "3D Genome — Part 2",
+          "duration_minutes": 40
+        }
+      ]
+    }
+  ]
+}
