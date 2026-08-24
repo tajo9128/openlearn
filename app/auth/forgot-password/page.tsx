@@ -57,8 +57,8 @@ export default function ForgotPasswordPage() {
                 <CheckCircle className="w-4 h-4 shrink-0 mt-0.5" />
                 <span>
                   If that email exists, a password reset link has been sent. Check your inbox (and
-                  spam folder). The link opens biodockify.com — after resetting, come back and log
-                  in with your new password.
+                  spam folder). The link opens the reset page — set a new password, then log in
+                  with it here.
                 </span>
               </div>
               <Link
