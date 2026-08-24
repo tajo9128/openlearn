@@ -37,6 +37,7 @@ export interface AuthResult {
   user?: AuthUser;
   error?: string;
   accessToken?: string;
+  message?: string;
 }
 
 // ==================== Main Platform Auth API ====================
@@ -120,6 +121,29 @@ export async function signIn(
     };
 
     return { success: true, user, accessToken: data.access_token };
+  } catch (err) {
+    return { success: false, error: String(err) };
+  }
+}
+
+/**
+ * Request a password-reset email from the main platform.
+ * The email links to the platform's reset page (www.biodockify.com/reset-password);
+ * credentials are shared, so the new password works here too.
+ */
+export async function requestPasswordReset(email: string): Promise<AuthResult> {
+  try {
+    const res = await fetch(
+      `${MAIN_API_URL}/auth/forgot-password?email=${encodeURIComponent(email)}`,
+      { method: 'POST' },
+    );
+    if (!res.ok) {
+      return { success: false, error: 'Could not request a reset link. Please try again.' };
+    }
+    return {
+      success: true,
+      message: 'If that email exists, a reset link has been sent.',
+    };
   } catch (err) {
     return { success: false, error: String(err) };
   }
