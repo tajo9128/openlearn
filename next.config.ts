@@ -18,6 +18,14 @@ const nextConfig: NextConfig = {
   async rewrites() {
     return [
       {
+        source: '/classroom/:classroomId/:classroomId2/audio/:path*',
+        destination: '/api/classroom-media/:classroomId/audio/:path*',
+      },
+      {
+        source: '/classroom/:classroomId/:classroomId2/media/:path*',
+        destination: '/api/classroom-media/:classroomId/media/:path*',
+      },
+      {
         source: '/classroom/:classroomId/audio/:path*',
         destination: '/api/classroom-media/:classroomId/audio/:path*',
       },

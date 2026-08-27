@@ -58,7 +58,7 @@ export async function readClassroom(id: string): Promise<PersistedClassroomData 
       if (data && !error) {
         const text = new TextDecoder().decode(data);
         const parsed = JSON.parse(text) as PersistedClassroomData;
-        return sanitizeClassroomMediaUrls(parsed);
+        return sanitizeClassroomMediaUrls(parsed, id);
       }
     } catch {
       // Fall through to local
@@ -70,7 +70,7 @@ export async function readClassroom(id: string): Promise<PersistedClassroomData 
   try {
     const content = await fs.readFile(filePath, 'utf-8');
     const parsed = JSON.parse(content) as PersistedClassroomData;
-    return sanitizeClassroomMediaUrls(parsed);
+    return sanitizeClassroomMediaUrls(parsed, id);
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
       return null;

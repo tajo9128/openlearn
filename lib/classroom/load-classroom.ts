@@ -177,8 +177,8 @@ export async function fetchClassroomFromApi(classroomId: string): Promise<Classr
   };
   if (!json.success || !json.classroom) return null;
   return {
-    stage: sanitizeClassroomMediaUrls(json.classroom.stage),
-    scenes: sanitizeClassroomMediaUrls(json.classroom.scenes),
+    stage: sanitizeClassroomMediaUrls(json.classroom.stage, classroomId),
+    scenes: sanitizeClassroomMediaUrls(json.classroom.scenes, classroomId),
   };
 }
 
@@ -191,8 +191,8 @@ export function applyClassroomStageAndScenes(
     chatSnapshot?: ChatStorageSnapshot;
   } = {},
 ): void {
-  const sanitizedStage = sanitizeClassroomMediaUrls(stage);
-  const nextScenes = sanitizeClassroomMediaUrls([...scenes]);
+  const sanitizedStage = sanitizeClassroomMediaUrls(stage, stage.id);
+  const nextScenes = sanitizeClassroomMediaUrls([...scenes], stage.id);
   useStageStore.setState((state) => ({
     stage: sanitizedStage,
     scenes: nextScenes,

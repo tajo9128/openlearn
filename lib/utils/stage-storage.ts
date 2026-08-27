@@ -76,7 +76,7 @@ export async function saveStageData(stageId: string, data: StageStoreData): Prom
 
       // Save new scenes
       if (data.scenes && data.scenes.length > 0) {
-        const sanitizedScenes = sanitizeClassroomMediaUrls(data.scenes);
+        const sanitizedScenes = sanitizeClassroomMediaUrls(data.scenes, stageId);
         await db.scenes.bulkPut(
           sanitizedScenes.map((scene, index) => ({
             ...scene,
@@ -118,7 +118,7 @@ export async function loadStageData(stageId: string): Promise<StageStoreData | n
 
     // Load scenes
     const rawScenes = await db.scenes.where('stageId').equals(stageId).sortBy('order');
-    const scenes = sanitizeClassroomMediaUrls(rawScenes);
+    const scenes = sanitizeClassroomMediaUrls(rawScenes, stageId);
 
     // Chat runtime data lives in a separate IndexedDB database. Keep the
     // document available when that independent store is temporarily
@@ -139,7 +139,7 @@ export async function loadStageData(stageId: string): Promise<StageStoreData | n
     log.info(`Loaded stage: ${stageId}, scenes: ${scenes.length}, chats: ${chats.length}`);
 
     return {
-      stage: sanitizeClassroomMediaUrls(stage),
+      stage: sanitizeClassroomMediaUrls(stage, stageId),
       // `SceneRecord` is the loose persisted shape (independent `type` + `content`);
       // re-bind each to a discriminated `AppScene`, deriving `type` from the stored
       // `content.type`. Spreads the full record, so `whiteboard` etc. are preserved.

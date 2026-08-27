@@ -34,6 +34,24 @@ describe('normalizeMediaUrl', () => {
     ).toBe('/api/classroom-media/ovRYKliCqd/audio/tts_s1_action_4B50uAsL.mp3');
   });
 
+  it('rewrites classroom-prefixed relative paths like ovRYKliCqd/audio/...', () => {
+    expect(
+      normalizeMediaUrl('ovRYKliCqd/audio/tts_s1_action_4B50uAsL.mp3'),
+    ).toBe('/api/classroom-media/ovRYKliCqd/audio/tts_s1_action_4B50uAsL.mp3');
+    expect(
+      normalizeMediaUrl('/ovRYKliCqd/audio/tts_s1_action_4B50uAsL.mp3'),
+    ).toBe('/api/classroom-media/ovRYKliCqd/audio/tts_s1_action_4B50uAsL.mp3');
+  });
+
+  it('rewrites duplicate classroom URL paths', () => {
+    expect(
+      normalizeMediaUrl('https://learn.biodockify.com/classroom/ovRYKliCqd/ovRYKliCqd/audio/tts_s1_action_4B50uAsL.mp3'),
+    ).toBe('/api/classroom-media/ovRYKliCqd/audio/tts_s1_action_4B50uAsL.mp3');
+    expect(
+      normalizeMediaUrl('/classroom/ovRYKliCqd/ovRYKliCqd/audio/tts_s1_action_4B50uAsL.mp3'),
+    ).toBe('/api/classroom-media/ovRYKliCqd/audio/tts_s1_action_4B50uAsL.mp3');
+  });
+
   it('resolves relative audio paths when classroomId is passed', () => {
     expect(
       normalizeMediaUrl('audio/tts_s1_action_4B50uAsL.mp3', 'ovRYKliCqd'),
