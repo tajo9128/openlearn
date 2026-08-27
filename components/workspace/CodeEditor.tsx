@@ -1,12 +1,13 @@
 'use client';
 
 import { useRef, useEffect } from 'react';
-import { EditorState, indentUnit } from '@codemirror/state';
+import { EditorState } from '@codemirror/state';
 import { EditorView, lineNumbers, highlightActiveLine } from '@codemirror/view';
 import {
   syntaxHighlighting,
   bracketMatching,
   indentOnInput,
+  indentUnit,
   HighlightStyle,
 } from '@codemirror/language';
 import { closeBrackets } from '@codemirror/autocomplete';
