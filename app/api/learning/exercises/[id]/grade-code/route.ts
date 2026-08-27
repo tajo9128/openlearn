@@ -25,23 +25,20 @@ export async function POST(
       return apiError(API_ERROR_CODES.MISSING_REQUIRED_FIELD, 400, 'Missing user_id or code');
     }
 
-    // If test_cases not provided, fetch from DB
-    let testCases: CodeTestCase[] = test_cases;
-    if (!testCases || testCases.length === 0) {
-      const { data: questions, error } = await supabaseQuery<any>(TABLES.EXERCISE_QUESTIONS, {
-        filters: { exercise_id: `eq.${exerciseId}`, question_type: 'eq.code' },
-      });
+    // Always fetch canonical test cases from DB to prevent client-side test case forgery
+    const { data: questions, error } = await supabaseQuery<any>(TABLES.EXERCISE_QUESTIONS, {
+      filters: { exercise_id: `eq.${exerciseId}`, question_type: 'eq.code' },
+    });
 
-      if (error) {
-        return apiError(API_ERROR_CODES.UPSTREAM_ERROR, 500, 'Failed to fetch test cases', error);
-      }
+    if (error) {
+      return apiError(API_ERROR_CODES.UPSTREAM_ERROR, 500, 'Failed to fetch test cases', error);
+    }
 
-      testCases = [];
-      for (const q of questions ?? []) {
-        // Test cases stored in options jsonb
-        if (Array.isArray(q.options)) {
-          testCases.push(...(q.options as CodeTestCase[]));
-        }
+    const testCases: CodeTestCase[] = [];
+    for (const q of questions ?? []) {
+      // Test cases stored in options jsonb
+      if (Array.isArray(q.options)) {
+        testCases.push(...(q.options as CodeTestCase[]));
       }
     }
 

@@ -6,9 +6,13 @@ import { createLogger } from '@/lib/logger';
 
 const log = createLogger('Compliance Cron API');
 
-const CRON_API_KEY = process.env.CRON_API_KEY ?? 'biodockify-cron-2026';
+const CRON_API_KEY = process.env.CRON_API_KEY;
 
 function checkCronAuth(request: NextRequest): boolean {
+  if (!CRON_API_KEY) {
+    log.warn('CRON_API_KEY is not configured in environment variables');
+    return false;
+  }
   const auth = request.headers.get('authorization');
   return auth === `Bearer ${CRON_API_KEY}`;
 }

@@ -59,8 +59,11 @@ async function downloadToBuffer(url: string): Promise<Buffer> {
   return Buffer.from(await resp.arrayBuffer());
 }
 
-function mediaServingUrl(baseUrl: string, classroomId: string, subPath: string): string {
-  return `${baseUrl}/api/classroom-media/${classroomId}/${subPath}`;
+function mediaServingUrl(_baseUrl: string, classroomId: string, subPath: string): string {
+  // Relative URL: the browser resolves it against the current origin, so it
+  // works on any domain and never bakes localhost/internal hosts into the
+  // persisted classroom JSON (which browsers then block as mixed content).
+  return `/api/classroom-media/${classroomId}/${subPath}`;
 }
 
 // ---------------------------------------------------------------------------

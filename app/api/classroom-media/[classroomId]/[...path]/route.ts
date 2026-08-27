@@ -37,7 +37,7 @@ export async function GET(
   }
 
   const subDir = pathSegments[0];
-  if (subDir !== 'media' && subDir !== 'audio') {
+  if (subDir !== 'media' && subDir !== 'audio' && subDir !== 'video' && subDir !== 'videos') {
     return NextResponse.json({ error: 'Invalid path' }, { status: 404 });
   }
 

@@ -49,8 +49,15 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
-  // Whitelist: access-code endpoints, health check
-  if (pathname.startsWith('/api/access-code/') || pathname === '/api/health' || pathname.startsWith('/api/auth/') || pathname.startsWith('/api/learning/compliance/cron') || pathname.startsWith('/api/tts')) {
+  // Whitelist: access-code endpoints, health check, auth, cron, tts, and classroom generation
+  if (
+    pathname.startsWith('/api/access-code/') ||
+    pathname === '/api/health' ||
+    pathname.startsWith('/api/auth/') ||
+    pathname.startsWith('/api/generate-classroom') ||
+    pathname.startsWith('/api/learning/compliance/cron') ||
+    pathname.startsWith('/api/tts')
+  ) {
     return NextResponse.next();
   }
 

@@ -20,7 +20,7 @@ export type AnswerData =
   | LinkAnswer
   | WordBankAnswer
   | StarAnswer
-  | VideoRecordingAnswer;
+  | VideoRecordingAnswer
   | CodeAnswer;
 
 export interface RadioAnswer {
