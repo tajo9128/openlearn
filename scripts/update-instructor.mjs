@@ -36,7 +36,7 @@ const headers = {
 
 async function main() {
   console.log('Fetching courses from Supabase...');
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/learning_courses?select=id,title,description,level,estimated_hours,instructor_name,tags,metadata&order=title.asc`, {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/learning_courses?select=*&order=title.asc`, {
     headers,
   });
 
