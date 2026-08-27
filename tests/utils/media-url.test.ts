@@ -25,6 +25,21 @@ describe('normalizeMediaUrl', () => {
     ).toBe('/api/classroom-media/ovRYKliCqd/videos/scene_1.mp4');
   });
 
+  it('rewrites /classroom/[id]/audio/... URLs to /api/classroom-media/[id]/audio/...', () => {
+    expect(
+      normalizeMediaUrl('https://learn.biodockify.com/classroom/ovRYKliCqd/audio/tts_s1_action_4B50uAsL.mp3'),
+    ).toBe('/api/classroom-media/ovRYKliCqd/audio/tts_s1_action_4B50uAsL.mp3');
+    expect(
+      normalizeMediaUrl('/classroom/ovRYKliCqd/audio/tts_s1_action_4B50uAsL.mp3'),
+    ).toBe('/api/classroom-media/ovRYKliCqd/audio/tts_s1_action_4B50uAsL.mp3');
+  });
+
+  it('resolves relative audio paths when classroomId is passed', () => {
+    expect(
+      normalizeMediaUrl('audio/tts_s1_action_4B50uAsL.mp3', 'ovRYKliCqd'),
+    ).toBe('/api/classroom-media/ovRYKliCqd/audio/tts_s1_action_4B50uAsL.mp3');
+  });
+
   it('leaves relative URLs and external S3 URLs intact', () => {
     expect(normalizeMediaUrl('/api/classroom-media/ovRYKliCqd/audio/tts_s1.mp3')).toBe(
       '/api/classroom-media/ovRYKliCqd/audio/tts_s1.mp3',

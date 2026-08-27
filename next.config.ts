@@ -11,10 +11,29 @@ const nextConfig: NextConfig = {
   // Mark them server-external so Next loads them natively and the dynamic
   // import resolves as a real Node call.
   serverExternalPackages: ['@earendil-works/pi-ai', '@earendil-works/pi-agent-core'],
-  eslint: { ignoreDuringBuilds: true },
   typescript: { ignoreBuildErrors: true },
   experimental: {
     proxyClientMaxBodySize: '200mb',
+  },
+  async rewrites() {
+    return [
+      {
+        source: '/classroom/:classroomId/audio/:path*',
+        destination: '/api/classroom-media/:classroomId/audio/:path*',
+      },
+      {
+        source: '/classroom/:classroomId/media/:path*',
+        destination: '/api/classroom-media/:classroomId/media/:path*',
+      },
+      {
+        source: '/classroom/:classroomId/videos/:path*',
+        destination: '/api/classroom-media/:classroomId/videos/:path*',
+      },
+      {
+        source: '/classroom/:classroomId/images/:path*',
+        destination: '/api/classroom-media/:classroomId/images/:path*',
+      },
+    ];
   },
   async headers() {
     const extraAncestors = process.env.ALLOWED_FRAME_ANCESTORS?.trim();

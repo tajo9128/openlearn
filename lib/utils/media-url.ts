@@ -9,8 +9,18 @@
 /**
  * Normalizes a single media URL to a relative or secure path.
  */
-export function normalizeMediaUrl(url: string | null | undefined): string | undefined {
+export function normalizeMediaUrl(
+  url: string | null | undefined,
+  classroomId?: string,
+): string | undefined {
   if (!url || typeof url !== 'string') return undefined;
+  if (url.startsWith('data:') || url.startsWith('blob:')) return url;
+
+  // If it contains /classroom/[id]/(audio|media|videos|images)/, rewrite to /api/classroom-media/[id]/...
+  const classroomMatch = url.match(/\/classroom\/([^/]+)\/(audio|media|videos|images)\/(.+)$/i);
+  if (classroomMatch) {
+    return `/api/classroom-media/${classroomMatch[1]}/${classroomMatch[2]}/${classroomMatch[3]}`;
+  }
 
   // If it contains /api/classroom-media/, strip any domain/origin prefix
   if (url.includes('/api/classroom-media/')) {
@@ -21,6 +31,18 @@ export function normalizeMediaUrl(url: string | null | undefined): string | unde
   // If it's an absolute localhost / 127.0.0.1 url with any port
   if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?\//i.test(url)) {
     return url.replace(/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?\//i, '/');
+  }
+
+  // If it's a relative path like audio/... or media/... or videos/... and we have classroomId or can detect it from window
+  if (/^(audio|media|videos|images)\//i.test(url)) {
+    const cid =
+      classroomId ||
+      (typeof window !== 'undefined'
+        ? window.location.pathname.match(/\/classroom\/([^/]+)/)?.[1]
+        : undefined);
+    if (cid) {
+      return `/api/classroom-media/${cid}/${url}`;
+    }
   }
 
   return url;
