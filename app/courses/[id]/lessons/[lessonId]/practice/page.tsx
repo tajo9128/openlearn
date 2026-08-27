@@ -1,4 +1,6 @@
-'use client';
+'use client'
+import { getUserId } from '@/lib/learning/get-user-id';
+;
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
@@ -35,7 +37,7 @@ export default function PracticePage() {
   const runnerRef = useRef<PyodideRunner | null>(null);
   const stdoutRef = useRef('');
   const lineIdRef = useRef(0);
-  const userId = typeof window !== 'undefined' ? localStorage.getItem('biodockify_user_id') ?? 'demo-user' : 'demo-user';
+  const userId = getUserId();
 
   // Fetch exercise data
   useEffect(() => {

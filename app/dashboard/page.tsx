@@ -1,4 +1,6 @@
-'use client';
+'use client'
+import { getUserId } from '@/lib/learning/get-user-id';
+;
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -9,10 +11,7 @@ export default function DashboardPage() {
   const [certificates, setCertificates] = useState<any[]>([]);
   const [stats, setStats] = useState({ coursesEnrolled: 0, lessonsCompleted: 0, certificatesEarned: 0 });
   const [loading, setLoading] = useState(true);
-  const userId =
-    typeof window !== 'undefined'
-      ? localStorage.getItem('biodockify_user_id') ?? 'demo-user'
-      : 'demo-user';
+  const userId = getUserId();
 
   useEffect(() => {
     Promise.all([

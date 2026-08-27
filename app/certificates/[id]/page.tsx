@@ -1,4 +1,6 @@
-'use client';
+'use client'
+import { getUserId } from '@/lib/learning/get-user-id';
+;
 
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
@@ -12,7 +14,7 @@ export default function CertificatePage() {
   useEffect(() => {
     if (!id) return;
     const userId =
-      localStorage.getItem('biodockify_user_id') ?? 'demo-user';
+      getUserId();
     fetch(`/api/learning/certificates?user_id=${userId}`)
       .then((r) => r.json())
       .then((d) => {

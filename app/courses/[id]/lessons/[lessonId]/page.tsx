@@ -1,4 +1,6 @@
-'use client';
+'use client'
+import { getUserId } from '@/lib/learning/get-user-id';
+;
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
@@ -30,9 +32,7 @@ export default function LessonPage() {
   const [completionStatus, setCompletionStatus] = useState<any>(null);
   const timerRef = useRef<WatchTimer | null>(null);
 
-  const userId = typeof window !== 'undefined'
-    ? localStorage.getItem('biodockify_user_id') ?? 'demo-user'
-    : 'demo-user';
+  const userId = getUserId();
 
   // Fetch lesson + course data
   useEffect(() => {

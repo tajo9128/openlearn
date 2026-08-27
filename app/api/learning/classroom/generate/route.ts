@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
     const requirement = buildRequirement(lesson, course, allLessons);
 
     // Start generation job
-    const baseUrl = 'http://localhost:3000';
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL || `http://localhost:${process.env.PORT || 3000}`;
     const genRes = await fetch(`${baseUrl}/api/generate-classroom`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

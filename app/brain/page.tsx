@@ -1,4 +1,6 @@
-'use client';
+'use client'
+import { getUserId } from '@/lib/learning/get-user-id';
+;
 
 import { useState, useEffect } from 'react';
 import { Brain, Sparkles, Calendar, AlertTriangle, Loader2, RefreshCw } from 'lucide-react';
@@ -13,7 +15,7 @@ export default function BrainPage() {
   const [gaps, setGaps] = useState<KnowledgeGapResponse | null>(null);
   const [planLoading, setPlanLoading] = useState(false);
   const [gapsLoading, setGapsLoading] = useState(false);
-  const userId = typeof window !== 'undefined' ? localStorage.getItem('biodockify_user_id') ?? 'demo-user' : 'demo-user';
+  const userId = getUserId();
 
   /**
    * Read model/key from OpenMAIC settings store (localStorage) for BYOK.

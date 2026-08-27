@@ -1,4 +1,6 @@
-'use client';
+'use client'
+import { getUserId } from '@/lib/learning/get-user-id';
+;
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -10,7 +12,7 @@ export default function CohortsPage() {
   const [showCreate, setShowCreate] = useState(false);
   const [name, setName] = useState('');
   const [desc, setDesc] = useState('');
-  const userId = typeof window !== 'undefined' ? localStorage.getItem('biodockify_user_id') ?? 'admin' : 'admin';
+  const userId = getUserId();
 
   useEffect(() => {
     fetch('/api/learning/cohorts')

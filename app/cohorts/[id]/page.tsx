@@ -1,4 +1,6 @@
-'use client';
+'use client'
+import { getUserId } from '@/lib/learning/get-user-id';
+;
 
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
@@ -15,7 +17,7 @@ export default function CohortDetailPage() {
   const [tab, setTab] = useState<'members' | 'courses' | 'goals'>('members');
   const [showAddCourse, setShowAddCourse] = useState(false);
   const [allCourses, setAllCourses] = useState<any[]>([]);
-  const userId = typeof window !== 'undefined' ? localStorage.getItem('biodockify_user_id') ?? 'admin' : 'admin';
+  const userId = getUserId();
 
   useEffect(() => {
     if (!id) return;

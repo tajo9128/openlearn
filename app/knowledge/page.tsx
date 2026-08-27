@@ -1,4 +1,6 @@
-'use client';
+'use client'
+import { getUserId } from '@/lib/learning/get-user-id';
+;
 
 import { useState, useEffect, useRef } from 'react';
 import { BookOpen, Search, Upload, Trash2, FileText, Send, Loader2, Brain, ExternalLink } from 'lucide-react';
@@ -9,7 +11,7 @@ export default function KnowledgePage() {
   const [tab, setTab] = useState<Tab>('docs');
   const [documents, setDocuments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const userId = typeof window !== 'undefined' ? localStorage.getItem('biodockify_user_id') ?? 'demo-user' : 'demo-user';
+  const userId = getUserId();
 
   useEffect(() => {
     fetchDocuments();

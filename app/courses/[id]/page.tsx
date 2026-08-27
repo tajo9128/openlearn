@@ -1,4 +1,6 @@
-'use client';
+'use client'
+import { getUserId } from '@/lib/learning/get-user-id';
+;
 
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
@@ -16,10 +18,7 @@ export default function CourseDetailPage() {
   const [enrolled, setEnrolled] = useState(false);
   const [expandedModule, setExpandedModule] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const userId =
-    typeof window !== 'undefined'
-      ? localStorage.getItem('biodockify_user_id') ?? 'demo-user'
-      : 'demo-user';
+  const userId = getUserId();
 
   useEffect(() => {
     if (!id) return;
