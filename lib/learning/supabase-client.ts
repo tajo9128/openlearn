@@ -101,10 +101,12 @@ export async function supabaseInsert<T = any>(
 export async function supabaseUpsert<T = any>(
   table: string,
   row: Record<string, unknown>,
-  onConflict: string,
+  onConflict?: string,
 ): Promise<SupabaseResult<T>> {
   try {
-    const url = `${SUPABASE_URL}/rest/v1/${table}`;
+    const url = onConflict
+      ? `${SUPABASE_URL}/rest/v1/${table}?on_conflict=${encodeURIComponent(onConflict)}`
+      : `${SUPABASE_URL}/rest/v1/${table}`;
     const res = await fetch(url, {
       method: 'POST',
       headers: {
