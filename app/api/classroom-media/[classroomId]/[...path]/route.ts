@@ -44,59 +44,64 @@ export async function GET(
   const ext = path.extname(pathSegments[pathSegments.length - 1]).toLowerCase();
   const contentType = MIME_TYPES[ext] || 'application/octet-stream';
 
-  // Try S3 first — redirect to presigned URL for direct browser access
-  if (isS3Configured()) {
-    try {
-      const s3Key = `classrooms/${classroomId}/${joined}`;
-      const presignedUrl = await s3GetPresignedUrl(s3Key, 3600);
-      if (presignedUrl) {
-        return NextResponse.redirect(presignedUrl, 302);
-      }
-    } catch (err) {
-      log.warn('S3 presigned URL failed, falling back to local:', err);
-    }
-  }
-
-  // Fallback: local filesystem
+  // 1. Try local filesystem first (fastest, most reliable)
   const filePath = path.join(CLASSROOMS_DIR, classroomId, ...pathSegments);
   const resolvedBase = path.resolve(CLASSROOMS_DIR, classroomId);
 
   try {
     const realPath = await fs.realpath(filePath);
-    if (!realPath.startsWith(resolvedBase + path.sep) && realPath !== resolvedBase) {
-      return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    if (realPath.startsWith(resolvedBase + path.sep) || realPath === resolvedBase) {
+      const stat = await fs.stat(realPath);
+      if (stat.isFile()) {
+        const stream = createReadStream(realPath);
+        const webStream = new ReadableStream({
+          start(controller) {
+            stream.on('data', (chunk: Buffer | string) => controller.enqueue(chunk));
+            stream.on('end', () => controller.close());
+            stream.on('error', (err) => controller.error(err));
+          },
+          cancel() {
+            stream.destroy();
+          },
+        });
+
+        return new NextResponse(webStream, {
+          status: 200,
+          headers: {
+            'Content-Type': contentType,
+            'Content-Length': String(stat.size),
+            'Accept-Ranges': 'bytes',
+            'Cache-Control': 'public, max-age=86400, immutable',
+          },
+        });
+      }
     }
-
-    const stat = await fs.stat(realPath);
-    if (!stat.isFile()) {
-      return NextResponse.json({ error: 'Not found' }, { status: 404 });
-    }
-
-    const stream = createReadStream(realPath);
-    const webStream = new ReadableStream({
-      start(controller) {
-        stream.on('data', (chunk: Buffer | string) => controller.enqueue(chunk));
-        stream.on('end', () => controller.close());
-        stream.on('error', (err) => controller.error(err));
-      },
-      cancel() {
-        stream.destroy();
-      },
-    });
-
-    return new NextResponse(webStream, {
-      status: 200,
-      headers: {
-        'Content-Type': contentType,
-        'Content-Length': String(stat.size),
-        'Cache-Control': 'public, max-age=86400, immutable',
-      },
-    });
   } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
-      return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
+      log.warn(`Local file read check failed [classroomId=${classroomId}, path=${joined}]:`, error);
     }
-    log.error(`Classroom media serving failed [classroomId=${classroomId}, path=${joined}]:`, error);
-    return NextResponse.json({ error: 'Internal error' }, { status: 500 });
   }
+
+  // 2. Fallback: try S3
+  if (isS3Configured()) {
+    try {
+      const s3Key = `classrooms/${classroomId}/${joined}`;
+      const { data, error } = await s3GetObject(s3Key);
+      if (data && !error) {
+        return new NextResponse(data, {
+          status: 200,
+          headers: {
+            'Content-Type': contentType,
+            'Content-Length': String(data.byteLength),
+            'Accept-Ranges': 'bytes',
+            'Cache-Control': 'public, max-age=86400, immutable',
+          },
+        });
+      }
+    } catch (err) {
+      log.warn('S3 retrieval failed:', err);
+    }
+  }
+
+  return NextResponse.json({ error: 'Not found' }, { status: 404 });
 }
