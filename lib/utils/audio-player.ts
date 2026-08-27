@@ -8,6 +8,7 @@
 
 import { db } from '@/lib/utils/database';
 import { createLogger } from '@/lib/logger';
+import { normalizeMediaUrl } from '@/lib/utils/media-url';
 
 const log = createLogger('AudioPlayer');
 
@@ -40,11 +41,12 @@ export class AudioPlayer {
     const requestToken = ++this.requestToken;
     try {
       // 1. Try audioUrl first (server-generated TTS)
-      if (audioUrl) {
+      const normalizedUrl = normalizeMediaUrl(audioUrl);
+      if (normalizedUrl) {
         this.stopAudioElement();
         if (requestToken !== this.requestToken) return false;
         this.audio = new Audio();
-        this.audio.src = audioUrl;
+        this.audio.src = normalizedUrl;
         if (this.muted) this.audio.volume = 0;
         else this.audio.volume = this.volume;
         this.audio.defaultPlaybackRate = this.playbackRate;

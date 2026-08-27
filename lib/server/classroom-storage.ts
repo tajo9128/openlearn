@@ -3,6 +3,7 @@ import path from 'path';
 import type { NextRequest } from 'next/server';
 import type { Scene, Stage } from '@/lib/types/stage';
 import { isS3Configured, s3PutObject, s3GetObject } from './s3-client';
+import { sanitizeClassroomMediaUrls } from '@/lib/utils/media-url';
 
 export const CLASSROOMS_DIR = path.join(process.cwd(), 'data', 'classrooms');
 export const CLASSROOM_JOBS_DIR = path.join(process.cwd(), 'data', 'classroom-jobs');
@@ -56,7 +57,8 @@ export async function readClassroom(id: string): Promise<PersistedClassroomData 
       const { data, error } = await s3GetObject(`classrooms/${id}.json`);
       if (data && !error) {
         const text = new TextDecoder().decode(data);
-        return JSON.parse(text) as PersistedClassroomData;
+        const parsed = JSON.parse(text) as PersistedClassroomData;
+        return sanitizeClassroomMediaUrls(parsed);
       }
     } catch {
       // Fall through to local
@@ -67,7 +69,8 @@ export async function readClassroom(id: string): Promise<PersistedClassroomData 
   const filePath = path.join(CLASSROOMS_DIR, `${id}.json`);
   try {
     const content = await fs.readFile(filePath, 'utf-8');
-    return JSON.parse(content) as PersistedClassroomData;
+    const parsed = JSON.parse(content) as PersistedClassroomData;
+    return sanitizeClassroomMediaUrls(parsed);
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
       return null;
@@ -114,12 +117,12 @@ export async function persistClassroom(
   },
   baseUrl: string,
 ): Promise<PersistedClassroomData & { url: string }> {
-  const classroomData: PersistedClassroomData = {
+  const classroomData: PersistedClassroomData = sanitizeClassroomMediaUrls({
     id: data.id,
     stage: data.stage,
     scenes: data.scenes,
     createdAt: new Date().toISOString(),
-  };
+  });
 
   const jsonContent = JSON.stringify(classroomData, null, 2);
 

@@ -23,6 +23,7 @@ import {
   withRuntimeStorageExclusiveLockUntilSettled,
   withRuntimeStorageSharedLock,
 } from './chat-storage-lock';
+import { sanitizeClassroomMediaUrls } from './media-url';
 
 const log = createLogger('StageStorage');
 
@@ -75,8 +76,9 @@ export async function saveStageData(stageId: string, data: StageStoreData): Prom
 
       // Save new scenes
       if (data.scenes && data.scenes.length > 0) {
+        const sanitizedScenes = sanitizeClassroomMediaUrls(data.scenes);
         await db.scenes.bulkPut(
-          data.scenes.map((scene, index) => ({
+          sanitizedScenes.map((scene, index) => ({
             ...scene,
             stageId,
             order: scene.order ?? index,
@@ -115,7 +117,8 @@ export async function loadStageData(stageId: string): Promise<StageStoreData | n
     }
 
     // Load scenes
-    const scenes = await db.scenes.where('stageId').equals(stageId).sortBy('order');
+    const rawScenes = await db.scenes.where('stageId').equals(stageId).sortBy('order');
+    const scenes = sanitizeClassroomMediaUrls(rawScenes);
 
     // Chat runtime data lives in a separate IndexedDB database. Keep the
     // document available when that independent store is temporarily
@@ -136,7 +139,7 @@ export async function loadStageData(stageId: string): Promise<StageStoreData | n
     log.info(`Loaded stage: ${stageId}, scenes: ${scenes.length}, chats: ${chats.length}`);
 
     return {
-      stage,
+      stage: sanitizeClassroomMediaUrls(stage),
       // `SceneRecord` is the loose persisted shape (independent `type` + `content`);
       // re-bind each to a discriminated `AppScene`, deriving `type` from the stored
       // `content.type`. Spreads the full record, so `whiteboard` etc. are preserved.

@@ -43,6 +43,7 @@ import { useI18n } from '@/lib/hooks/use-i18n';
 import { useStageStore } from '@/lib/store/stage';
 import { useCanvasStore } from '@/lib/store/canvas';
 import { useSettingsStore } from '@/lib/store/settings';
+import { normalizeMediaUrl } from '@/lib/utils/media-url';
 import { useAgentRegistry } from '@/lib/orchestration/registry/store';
 import { AvatarDisplay } from '@/components/ui/avatar-display';
 import {
@@ -335,7 +336,7 @@ function SpeechTtsBar({
 
   const preview = async () => {
     stopPreview();
-    let src = audioUrl ?? null;
+    let src = normalizeMediaUrl(audioUrl) ?? null;
     if (!src) {
       src = await audioObjectUrl(lookupId);
       objUrlRef.current = src;

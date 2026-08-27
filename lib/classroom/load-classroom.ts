@@ -14,6 +14,7 @@ import { useMediaGenerationStore, type MediaTask } from '@/lib/store/media-gener
 import { useStageStore, type StageSceneLoadToken } from '@/lib/store/stage';
 import type { GeneratedAgentRecord, MediaFileRecord } from '@/lib/utils/database';
 import type { Scene, Stage } from '@/lib/types/stage';
+import { sanitizeClassroomMediaUrls } from '@/lib/utils/media-url';
 
 export interface ClassroomPayload {
   stage: Stage;
@@ -175,7 +176,10 @@ export async function fetchClassroomFromApi(classroomId: string): Promise<Classr
     classroom?: ClassroomPayload;
   };
   if (!json.success || !json.classroom) return null;
-  return json.classroom;
+  return {
+    stage: sanitizeClassroomMediaUrls(json.classroom.stage),
+    scenes: sanitizeClassroomMediaUrls(json.classroom.scenes),
+  };
 }
 
 export function applyClassroomStageAndScenes(
@@ -187,9 +191,10 @@ export function applyClassroomStageAndScenes(
     chatSnapshot?: ChatStorageSnapshot;
   } = {},
 ): void {
-  const nextScenes = [...scenes];
+  const sanitizedStage = sanitizeClassroomMediaUrls(stage);
+  const nextScenes = sanitizeClassroomMediaUrls([...scenes]);
   useStageStore.setState((state) => ({
-    stage,
+    stage: sanitizedStage,
     scenes: nextScenes,
     currentSceneId: nextScenes[0]?.id ?? null,
     chats: options.chats ?? [],
