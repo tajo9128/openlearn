@@ -6,7 +6,7 @@
     "description": "A hands-on 2026 university course on bioinformatics and computational genomics: sequence analysis and alignment, molecular representation and 3D structure, binding affinity, a molecular docking lab with AutoDock Vina, protein dynamics, transcription factors, and 3D genome analysis. Taught by an AI instructor with narrated interactive classrooms. Based on the Introduction to Bioinformatics and Computational Genomics course materials from Warsaw University of Technology (github.com/maciek-wisniewski/intro_to_bioinf_and_comp_gen_2026), adapted with attribution.",
     "category": "research",
     "difficulty": "intermediate",
-    "instructor_name": "Dr. Tajuddin",
+    "instructor_name": "BioDockify AI",
     "is_free": true,
     "price": 0,
     "duration_hours": 8,

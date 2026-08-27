@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
 
     // Map voice
     const v = (voice ?? 'male').toLowerCase();
-    let voiceName = VOICES.male; // Default: Dr. Tajuddin = male voice
+    let voiceName = VOICES.male; // Default: BioDockify AI = male voice
     if (v.includes('female') || v.includes('jenny') || v.includes('aria')) {
       voiceName = VOICES.female;
     } else if (v.includes('neural')) {
@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
 export async function GET() {
   return NextResponse.json({
     voices: [
-      { voice_id: 'male', name: 'en-US-GuyNeural (Dr. Tajuddin)' },
+      { voice_id: 'male', name: 'en-US-GuyNeural (BioDockify AI)' },
       { voice_id: 'female', name: 'en-US-JennyNeural' },
       { voice_id: 'default', name: 'en-US-AriaNeural' },
     ],

@@ -6,7 +6,7 @@
     "description": "Learn how protein structures drive drug discovery: from protein basics and structure analysis, through molecular docking with AutoDock, to structure-based and peptide-based drug design. Taught by an AI instructor with narrated interactive classrooms. Based on the NIGMS Structural Biology and Drug Discovery module (github.com/NIGMS/Structural-Biology-and-Drug-Discovery), US Government work, available in the public domain.",
     "category": "pharmacy",
     "difficulty": "intermediate",
-    "instructor_name": "Dr. Tajuddin",
+    "instructor_name": "BioDockify AI",
     "is_free": true,
     "price": 0,
     "duration_hours": 6,

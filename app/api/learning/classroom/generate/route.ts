@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
       allLessons = data ?? [];
     }
 
-    // Build requirement with Dr. Tajuddin + 15 slides
+    // Build requirement with BioDockify AI + 15 slides
     const requirement = buildRequirement(lesson, course, allLessons);
 
     // Start generation job
@@ -100,14 +100,14 @@ function buildRequirement(lesson: any, course: any, allLessons: any[]): string {
   return 'Create an interactive classroom lesson about: "' + lesson.title + '"\n\n' +
     'This lesson is part of the course: "' + (course?.title ?? '') + '"\n' +
     'Course description: ' + (course?.description ?? '') + '\n\n' +
-    'The instructor for this course is Tajuddin, a pharmaceutical research expert and educator.\n' +
-    'Create agent profiles where the main teacher/agent is named "Tajuddin" with the role of instructor.\n\n' +
+    'The instructor for this course is BioDockify AI, a pharmaceutical research expert and educator.\n' +
+    'Create agent profiles where the main teacher/agent is named "BioDockify AI" with the role of instructor.\n\n' +
     'Lesson content to teach:\n' + content.substring(0, 5000) + '\n\n' +
     'Other topics in this course:\n' + otherTopics + '\n\n' +
     'Requirements:\n' +
     '- Include voice narration (TTS) for all slides\n' +
-    '- The speaker should be introduced as Tajuddin\n' +
-    '- CRITICAL: The first slide must open with a brief greeting like "Welcome to [lesson title]. I\'m Tajuddin, and today we\'ll cover..." — this is the ONLY slide that introduces the speaker.\n' +
+    '- The speaker should be introduced as BioDockify AI\n' +
+    '- CRITICAL: The first slide must open with a brief greeting like "Welcome to [lesson title]. I\'m BioDockify AI, and today we\'ll cover..." — this is the ONLY slide that introduces the speaker.\n' +
     '- CRITICAL: Every slide AFTER the first must begin DIRECTLY with the teaching content. NO greetings, NO "welcome back", NO "hello everyone", NO re-introducing the speaker. Just dive straight into the topic as a continuous lecture.\n' +
     '- The 15 slides should flow as ONE continuous lecture, like a human recorded course — not 15 separate mini-lessons.\n' +
     '- Include interactive quiz questions\n' +

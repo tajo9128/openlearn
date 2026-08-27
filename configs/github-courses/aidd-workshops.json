@@ -6,7 +6,7 @@
     "description": "A hands-on workshop series on applying AI and deep learning to drug discovery: molecular datasets and MoleculeNet, molecular fingerprints and featurizations, graph convolutions, model building with TensorFlow and PyTorch, and modeling protein-ligand interactions with atomic convolutions. Taught by an AI instructor with narrated interactive classrooms. Based on the GouldGroup AI in Drug Discovery workshops (github.com/GouldGroup/aidd-workshops), adapted under its open license with attribution.",
     "category": "ai",
     "difficulty": "intermediate",
-    "instructor_name": "Dr. Tajuddin",
+    "instructor_name": "BioDockify AI",
     "is_free": true,
     "price": 0,
     "duration_hours": 7,
