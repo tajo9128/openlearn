@@ -8,6 +8,7 @@ import { GraduationCap, Mail, Lock, Loader2, AlertCircle, CheckCircle } from 'lu
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const redirectUrl = searchParams.get('redirect') || '/dashboard';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -44,7 +45,7 @@ function LoginForm() {
       } else {
         localStorage.setItem('biodockify_user_id', data.user?.id);
         localStorage.setItem('biodockify_user_name', data.user?.name ?? email.split('@')[0]);
-        router.push('/dashboard');
+        router.push(redirectUrl);
       }
     } catch {
       setError('Connection error. Please try again.');

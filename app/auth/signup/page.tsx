@@ -1,12 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { GraduationCap, Mail, Lock, User, Loader2, AlertCircle, CheckCircle } from 'lucide-react';
 
-export default function SignupPage() {
+function SignupForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectUrl = searchParams.get('redirect') || '/dashboard';
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -47,7 +49,7 @@ export default function SignupPage() {
         // Logged in immediately (no email verification required)
         localStorage.setItem('biodockify_user_id', data.user?.id);
         localStorage.setItem('biodockify_user_name', data.user?.name ?? name);
-        router.push('/dashboard');
+        router.push(redirectUrl);
       }
     } catch {
       setError('Connection error. Please try again.');
@@ -159,5 +161,19 @@ export default function SignupPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 flex items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-emerald-500" />
+        </div>
+      }
+    >
+      <SignupForm />
+    </Suspense>
   );
 }

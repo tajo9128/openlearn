@@ -1,10 +1,12 @@
 'use client';
 
 import { useState, useEffect, useMemo, useRef, useDeferredValue } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   ArrowUp,
+  BookOpen,
   Check,
   ChevronDown,
   Clock,
@@ -581,10 +583,48 @@ function HomePage() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.25 }}
-          className="text-sm text-muted-foreground/60 mb-8"
+          className="text-sm text-muted-foreground/60 mb-6"
         >
           {t('home.slogan')}
         </motion.p>
+
+        {/* ── 6 Live Courses Banner Card ── */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="w-full mb-6"
+        >
+          <Link
+            href="/courses"
+            className="group block p-4 rounded-2xl bg-gradient-to-r from-emerald-950/60 via-slate-900/80 to-cyan-950/60 border border-emerald-500/30 hover:border-emerald-400/60 shadow-lg shadow-emerald-900/10 hover:shadow-emerald-900/20 backdrop-blur-xl transition-all duration-300"
+          >
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center shrink-0 text-emerald-400 group-hover:scale-105 transition-transform">
+                  <BookOpen className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-bold text-white group-hover:text-emerald-300 transition-colors">
+                      6 AI-Powered Courses Are Live!
+                    </span>
+                    <span className="text-[10px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                      71 Lessons • Free
+                    </span>
+                  </div>
+                  <p className="text-xs text-neutral-400 mt-0.5 line-clamp-1">
+                    Python, AI Drug Discovery, Data Science, Structural Biology, Pharmacology & RDKit
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-400 shrink-0 self-end sm:self-center bg-emerald-900/40 border border-emerald-500/30 px-3 py-1.5 rounded-lg group-hover:bg-emerald-800/50 transition-colors">
+                <span>Browse Courses</span>
+                <span className="group-hover:translate-x-0.5 transition-transform">&rarr;</span>
+              </div>
+            </div>
+          </Link>
+        </motion.div>
 
         {/* ── Unified input area ── */}
         <motion.div
