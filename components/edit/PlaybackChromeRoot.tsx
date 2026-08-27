@@ -280,6 +280,9 @@ export const PlaybackChromeRoot = forwardRef<PlaybackChromeRootHandle, PlaybackC
     const sceneEpochRef = useRef(0);
     // When true, the next engine init will auto-start playback (for auto-play scene advance)
     const autoStartRef = useRef(false);
+    // Cross-scene seek: {sceneId, actionIndex, offsetMs, autoplay} applied when
+    // the target scene's engine finishes initializing.
+    const pendingSeekRef = useRef<{ sceneId: string; actionIndex: number; offsetMs: number; autoplay: boolean } | null>(null);
     // Discussion buffer-level pause state (distinct from soft-pause which aborts SSE)
     const [isDiscussionPaused, setIsDiscussionPaused] = useState(false);
 
@@ -789,6 +792,7 @@ export const PlaybackChromeRoot = forwardRef<PlaybackChromeRootHandle, PlaybackC
               lectureActionCounterRef.current = 0;
             }
             engine.start();
+            await applyPendingSeek(engine, currentScene);
           })();
         } else {
           // Load saved playback state and restore position (but never auto-play).
@@ -881,6 +885,36 @@ export const PlaybackChromeRoot = forwardRef<PlaybackChromeRootHandle, PlaybackC
         ? sceneTimelineMs[sceneTimelineMs.length - 1].startMs + sceneTimelineMs[sceneTimelineMs.length - 1].durationMs
         : 0;
 
+    // ── Global timeline: cumulative durations across ALL scenes ──
+    // Gives the lecture one continuous seek bar (like a pre-recorded video)
+    // instead of a per-slide scrubber that resets on every scene change.
+    const globalTimelineMs = useMemo(() => {
+        const speed = playbackSpeed || 1;
+        let elapsed = 0;
+        return scenes.map((scene) => {
+            const startMs = elapsed;
+            let durMs = 0;
+            scene.actions?.forEach((action: any) => {
+                if (action.type !== 'speech') return;
+                const text = action.text || action.content || '';
+                durMs += Math.max(2000, (text.split(/\s+/).length / (250 * speed)) * 60000);
+            });
+            if (durMs === 0) durMs = 2000; // non-speech scenes still occupy a slot
+            elapsed += durMs;
+            return { startMs, durationMs: durMs };
+        });
+    }, [scenes, playbackSpeed]);
+
+    const globalTotalMs = globalTimelineMs.length > 0
+        ? globalTimelineMs[globalTimelineMs.length - 1].startMs + globalTimelineMs[globalTimelineMs.length - 1].durationMs
+        : 0;
+
+    const globalCurrentMs = useMemo(() => {
+        const idx = scenes.findIndex((s) => s.id === currentSceneId);
+        if (idx < 0 || !globalTimelineMs[idx]) return 0;
+        return globalTimelineMs[idx].startMs + currentTimeMs;
+    }, [scenes, currentSceneId, globalTimelineMs, currentTimeMs]);
+
     // Poll audio player for current time during playback
     useEffect(() => {
         if (engineMode !== 'playing') return;
@@ -921,16 +955,89 @@ export const PlaybackChromeRoot = forwardRef<PlaybackChromeRootHandle, PlaybackC
         }
     }, [sceneTimelineMs, engineMode]);
 
-    // Jump forward/backward 10 seconds
+    // Apply a cross-scene seek once the target scene's engine is ready.
+    const applyPendingSeek = useCallback(async (engine: any, scene: any) => {
+        const pending = pendingSeekRef.current;
+        if (!pending || pending.sceneId !== scene.id) return;
+        pendingSeekRef.current = null;
+        if (!engine.canJumpToAction(pending.actionIndex)) return;
+        try {
+            const restored = await engine.jumpToAction(pending.actionIndex, {
+                autoplay: pending.autoplay,
+            });
+            if (!restored) return;
+            updateCurrentPlaybackActionIndex(pending.actionIndex);
+            const action = scene.actions?.[pending.actionIndex];
+            if (action?.type === 'speech') {
+                setLectureSpeech(action.text);
+            }
+            if (pending.offsetMs > 500) {
+                audioPlayerRef.current.seek(pending.offsetMs);
+            }
+        } catch {
+            // Seek is best-effort; leave the scene at its start
+        }
+    }, []);
+
+    // Global seek across the whole lecture: finds the scene containing the
+    // target time and delegates to the per-scene seek when possible.
+    const handleGlobalSeek = useCallback((ms: number) => {
+        if (globalTimelineMs.length === 0) return;
+        const clamped = Math.max(0, Math.min(ms, globalTotalMs));
+        let targetIdx = 0;
+        for (let i = 0; i < globalTimelineMs.length; i++) {
+            if (globalTimelineMs[i].startMs <= clamped) targetIdx = i;
+            else break;
+        }
+        const targetScene = scenes[targetIdx];
+        if (!targetScene) return;
+        const withinMs = clamped - globalTimelineMs[targetIdx].startMs;
+
+        if (targetScene.id === currentSceneId) {
+            handleSeek(withinMs);
+            return;
+        }
+
+        // Resolve the within-scene action + offset for the new scene
+        let elapsed = 0;
+        let actionIndex = 0;
+        let offsetMs = 0;
+        const speechActions = (targetScene.actions || [])
+            .map((a: any, i: number) => ({ a, i }))
+            .filter(({ a }: any) => a.type === 'speech');
+        if (speechActions.length > 0) {
+            let chosen = speechActions[0];
+            for (const entry of speechActions) {
+                const text = entry.a.text || entry.a.content || '';
+                const dur = Math.max(2000, (text.split(/\s+/).length / (250 * (playbackSpeed || 1))) * 60000);
+                if (elapsed + dur >= withinMs || entry === speechActions[speechActions.length - 1]) {
+                    chosen = entry;
+                    offsetMs = Math.max(0, withinMs - elapsed);
+                    break;
+                }
+                elapsed += dur;
+            }
+            actionIndex = chosen.i;
+        }
+
+        pendingSeekRef.current = {
+            sceneId: targetScene.id,
+            actionIndex,
+            offsetMs,
+            autoplay: engineMode === 'playing',
+        };
+        autoStartRef.current = true; // engine initializes + start, then applies the seek
+        useStageStore.getState().setCurrentSceneId(targetScene.id);
+    }, [globalTimelineMs, globalTotalMs, scenes, currentSceneId, handleSeek, engineMode, playbackSpeed]);
+
+    // Jump forward/backward 10 seconds (across the whole lecture)
     const handleJumpForward10 = useCallback(() => {
-        const target = currentTimeMs + 10000;
-        handleSeek(Math.min(target, totalSceneDurationMs));
-    }, [currentTimeMs, totalSceneDurationMs, handleSeek]);
+        handleGlobalSeek(Math.min(globalCurrentMs + 10000, globalTotalMs));
+    }, [globalCurrentMs, globalTotalMs, handleGlobalSeek]);
 
     const handleJumpBackward10 = useCallback(() => {
-        const target = Math.max(0, currentTimeMs - 10000);
-        handleSeek(target);
-    }, [currentTimeMs, handleSeek]);
+        handleGlobalSeek(Math.max(0, globalCurrentMs - 10000));
+    }, [globalCurrentMs, handleGlobalSeek]);
 
 
 
@@ -1417,9 +1524,9 @@ export const PlaybackChromeRoot = forwardRef<PlaybackChromeRootHandle, PlaybackC
                   ? () => onRetryOutline(generatingOutlines[0].id)
                   : undefined
               }
-              currentTimeMs={currentTimeMs}
-              totalDurationMs={totalSceneDurationMs}
-              onSeek={handleSeek}
+              currentTimeMs={globalCurrentMs}
+              totalDurationMs={globalTotalMs}
+              onSeek={handleGlobalSeek}
               onJumpForward10={handleJumpForward10}
               onJumpBackward10={handleJumpBackward10}
             />

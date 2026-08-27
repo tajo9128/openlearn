@@ -925,7 +925,7 @@ export const useSettingsStore = create<SettingsState>()(
         // Playback controls
         ttsMuted: false,
         ttsVolume: 1,
-        autoPlayLecture: false,
+        autoPlayLecture: true,
         playbackSpeed: 1,
 
         // Layout preferences
@@ -1878,10 +1878,16 @@ export const useSettingsStore = create<SettingsState>()(
     },
     {
       name: 'settings-storage',
-      version: 4,
+      version: 5,
       // Migrate persisted state
       migrate: (persistedState: unknown, version: number) => {
         const state = persistedState as Partial<SettingsState>;
+
+        // v4 -> v5: lectures auto-advance like a continuous video by default.
+        // Older clients persisted false explicitly; flip them once.
+        if (version < 5) {
+          state.autoPlayLecture = true;
+        }
 
         // v0 → v1: clear hardcoded default model so user must actively select
         if (version === 0) {
