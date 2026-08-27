@@ -36,7 +36,7 @@ const headers = {
 
 async function main() {
   console.log('Fetching courses from Supabase...');
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/learning_courses?select=id,title,instructor_name`, {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/learning_courses?select=id,title,description,level,estimated_hours,instructor_name,tags,metadata&order=title.asc`, {
     headers,
   });
 
@@ -46,41 +46,8 @@ async function main() {
   }
 
   const courses = await res.json();
-  console.log(`Found ${courses.length} courses:`);
-  for (const c of courses) {
-    console.log(` - [${c.id}] ${c.title} (Instructor: "${c.instructor_name}")`);
-  }
-
-  const toUpdate = courses.filter((c) => c.instructor_name && c.instructor_name.toLowerCase().includes('tajuddin'));
-  console.log(`Found ${toUpdate.length} courses with Tajuddin as instructor.`);
-
-  for (const c of toUpdate) {
-    console.log(`Updating course "${c.title}" to instructor "BioDockify AI"...`);
-    const updateRes = await fetch(`${SUPABASE_URL}/rest/v1/learning_courses?id=eq.${encodeURIComponent(c.id)}`, {
-      method: 'PATCH',
-      headers,
-      body: JSON.stringify({ instructor_name: 'BioDockify AI' }),
-    });
-
-    if (!updateRes.ok) {
-      console.error(`Failed to update course ${c.id}:`, updateRes.status, await updateRes.text());
-    } else {
-      console.log(`Successfully updated course ${c.id}`);
-    }
-  }
-
-  // Also check if any other courses have null or empty instructor_name
-  const emptyInstructor = courses.filter((c) => !c.instructor_name || c.instructor_name.trim() === '');
-  for (const c of emptyInstructor) {
-    console.log(`Setting default instructor "BioDockify AI" for course "${c.title}"...`);
-    await fetch(`${SUPABASE_URL}/rest/v1/learning_courses?id=eq.${encodeURIComponent(c.id)}`, {
-      method: 'PATCH',
-      headers,
-      body: JSON.stringify({ instructor_name: 'BioDockify AI' }),
-    });
-  }
-
-  console.log('All courses updated successfully.');
+  console.log('=== COURSES DUMP ===');
+  console.log(JSON.stringify(courses, null, 2));
 }
 
 main().catch(console.error);
