@@ -270,6 +270,14 @@ export interface LLMRetryOptions {
 
 const DEFAULT_VALIDATE = (text: string) => text.trim().length > 0;
 
+/**
+ * Default output-token budget for LLM calls that don't set one. Reasoning
+ * models that always think first (e.g. glm-5.3 behind AgentRouter) exhaust
+ * the AI SDK's small default before any text is produced, which surfaces
+ * downstream as empty/unparseable responses.
+ */
+const DEFAULT_MAX_OUTPUT_TOKENS = 32000;
+
 // ---------------------------------------------------------------------------
 // Usage capture
 //
@@ -335,7 +343,14 @@ export async function callLLM<T extends GenerateTextParams>(
     try {
       // Resolve effective thinking config: per-call > global env > undefined
       const effectiveThinking = thinking ?? getGlobalThinkingConfig();
-      const injectedParams = injectProviderOptions(params, effectiveThinking);
+      // Reasoning models that always think (e.g. glm-5.3 via AgentRouter) burn
+      // the SDK's small default max_tokens before emitting any text. Default to
+      // a generous budget when the caller didn't set one.
+      const paramsWithBudget =
+        (params as Record<string, unknown>).maxOutputTokens === undefined
+          ? ({ ...params, maxOutputTokens: DEFAULT_MAX_OUTPUT_TOKENS } as T)
+          : params;
+      const injectedParams = injectProviderOptions(paramsWithBudget, effectiveThinking);
 
       // Wrap in thinkingContext so the custom fetch wrapper in providers.ts
       // can read the config and inject vendor-specific body params for
@@ -402,7 +417,11 @@ export function streamLLM<T extends StreamTextParams>(
     },
   } as T;
 
-  const injectedParams = injectProviderOptions(wrappedParams, effectiveThinking);
+  const withBudget =
+    (wrappedParams as Record<string, unknown>).maxOutputTokens === undefined
+      ? ({ ...wrappedParams, maxOutputTokens: DEFAULT_MAX_OUTPUT_TOKENS } as T)
+      : wrappedParams;
+  const injectedParams = injectProviderOptions(withBudget, effectiveThinking);
   const result = thinkingContext.run(effectiveThinking, () => streamText(injectedParams));
 
   return result;
