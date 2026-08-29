@@ -1724,7 +1724,7 @@ export function getModel(config: ModelConfig): ModelWithInfo {
         // block pages) with a 200. The SDK cannot parse those, so detect
         // non-JSON bodies and redial a few times before giving up.
         let lastResponse: Response | undefined;
-        for (let attempt = 0; attempt < 4; attempt++) {
+        for (let attempt = 0; attempt < 8; attempt++) {
           const res = await oneAttempt();
           const text = await res.clone().text();
           const trimmed = text.trimStart();
@@ -1736,7 +1736,7 @@ export function getModel(config: ModelConfig): ModelWithInfo {
             });
           }
           lastResponse = res;
-          await new Promise((r) => setTimeout(r, 3000 * (attempt + 1)));
+          await new Promise((r) => setTimeout(r, 2000 + 1500 * attempt));
         }
         return lastResponse!;
       }) as typeof fetch;
