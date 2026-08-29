@@ -1663,6 +1663,11 @@ export function getModel(config: ModelConfig): ModelWithInfo {
       } else {
         anthropicOptions.apiKey = effectiveApiKey;
       }
+      // Community gateways (AgentRouter) queue requests behind coding-tool
+      // traffic; their 60s header timeout is shorter than a big reasoning
+      // prompt needs. 10 min keeps long outline/scene calls alive.
+      anthropicOptions.fetch = (async (url: RequestInfo | URL, init?: RequestInit) =>
+        fetch(url, { ...init, signal: AbortSignal.timeout(600_000) })) as typeof fetch;
       if (config.providerId === 'minimax') {
         anthropicOptions.fetch = (async (url: RequestInfo | URL, init?: RequestInit) => {
           const capability = getCatalogThinkingCapability(config.providerId, config.modelId);
