@@ -1672,6 +1672,7 @@ export function getModel(config: ModelConfig): ModelWithInfo {
       // Content-Type headers.
       anthropicOptions.fetch = (async (url: RequestInfo | URL, init?: RequestInit) => {
         const { request: nodeRequest } = await import('node:https');
+        const zlib = await import('node:zlib');
         const u = new URL(url.toString());
         const headerBag = new Headers(init?.headers);
         const body = typeof init?.body === 'string' ? init.body : undefined;
@@ -1688,11 +1689,22 @@ export function getModel(config: ModelConfig): ModelWithInfo {
               const chunks: Buffer[] = [];
               res.on('data', (c: Buffer) => chunks.push(c));
               res.on('end', () => {
+                let buf = Buffer.concat(chunks);
+                // node:https does not auto-decompress (unlike fetch); the SDK
+                // cannot parse gzipped bodies, so decode them here.
+                const enc = String(res.headers['content-encoding'] || '').toLowerCase();
+                try {
+                  if (enc.includes('gzip')) buf = zlib.gunzipSync(buf);
+                  else if (enc.includes('deflate')) buf = zlib.inflateSync(buf);
+                  else if (enc.includes('br')) buf = zlib.brotliDecompressSync(buf);
+                } catch {
+                  // leave the body as-is; the SDK surfaces a parse error
+                }
                 const ct = Array.isArray(res.headers['content-type'])
                   ? res.headers['content-type'][0]
                   : res.headers['content-type'];
                 resolve(
-                  new Response(Buffer.concat(chunks), {
+                  new Response(buf, {
                     status: res.statusCode,
                     headers: { 'content-type': ct || 'application/json' },
                   }),
