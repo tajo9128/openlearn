@@ -1676,47 +1676,69 @@ export function getModel(config: ModelConfig): ModelWithInfo {
         const u = new URL(url.toString());
         const headerBag = new Headers(init?.headers);
         const body = typeof init?.body === 'string' ? init.body : undefined;
-        return new Promise<Response>((resolve, reject) => {
-          const req = nodeRequest(
-            {
-              hostname: u.hostname,
-              port: u.port || 443,
-              path: u.pathname + u.search,
-              method: init?.method || 'GET',
-              headers: Object.fromEntries(headerBag.entries()),
-            },
-            (res) => {
-              const chunks: Buffer[] = [];
-              res.on('data', (c: Buffer) => chunks.push(c));
-              res.on('end', () => {
-                let buf = Buffer.concat(chunks);
-                // node:https does not auto-decompress (unlike fetch); the SDK
-                // cannot parse gzipped bodies, so decode them here.
-                const enc = String(res.headers['content-encoding'] || '').toLowerCase();
-                try {
-                  if (enc.includes('gzip')) buf = zlib.gunzipSync(buf);
-                  else if (enc.includes('deflate')) buf = zlib.inflateSync(buf);
-                  else if (enc.includes('br')) buf = zlib.brotliDecompressSync(buf);
-                } catch {
-                  // leave the body as-is; the SDK surfaces a parse error
-                }
-                const ct = Array.isArray(res.headers['content-type'])
-                  ? res.headers['content-type'][0]
-                  : res.headers['content-type'];
-                resolve(
-                  new Response(buf, {
-                    status: res.statusCode,
-                    headers: { 'content-type': ct || 'application/json' },
-                  }),
-                );
-              });
-            },
-          );
-          req.setTimeout(900_000, () => req.destroy(new Error('gateway request exceeded 900s')));
-          req.on('error', reject);
-          if (body) req.write(body);
-          req.end();
-        });
+
+        const oneAttempt = () =>
+          new Promise<Response>((resolve, reject) => {
+            const req = nodeRequest(
+              {
+                hostname: u.hostname,
+                port: u.port || 443,
+                path: u.pathname + u.search,
+                method: init?.method || 'GET',
+                headers: Object.fromEntries(headerBag.entries()),
+              },
+              (res) => {
+                const chunks: Buffer[] = [];
+                res.on('data', (c: Buffer) => chunks.push(c));
+                res.on('end', () => {
+                  let buf = Buffer.concat(chunks);
+                  // node:https does not auto-decompress (unlike fetch); the SDK
+                  // cannot parse gzipped bodies, so decode them here.
+                  const enc = String(res.headers['content-encoding'] || '').toLowerCase();
+                  try {
+                    if (enc.includes('gzip')) buf = zlib.gunzipSync(buf);
+                    else if (enc.includes('deflate')) buf = zlib.inflateSync(buf);
+                    else if (enc.includes('br')) buf = zlib.brotliDecompressSync(buf);
+                  } catch {
+                    // leave the body as-is; the SDK surfaces a parse error
+                  }
+                  const ct = Array.isArray(res.headers['content-type'])
+                    ? res.headers['content-type'][0]
+                    : res.headers['content-type'];
+                  resolve(
+                    new Response(buf, {
+                      status: res.statusCode,
+                      headers: { 'content-type': ct || 'application/json' },
+                    }),
+                  );
+                });
+              },
+            );
+            req.setTimeout(900_000, () => req.destroy(new Error('gateway request exceeded 900s')));
+            req.on('error', reject);
+            if (body) req.write(body);
+            req.end();
+          });
+
+        // The gateway intermittently serves HTML error pages (rate-limit /
+        // block pages) with a 200. The SDK cannot parse those, so detect
+        // non-JSON bodies and redial a few times before giving up.
+        let lastResponse: Response | undefined;
+        for (let attempt = 0; attempt < 4; attempt++) {
+          const res = await oneAttempt();
+          const text = await res.clone().text();
+          const trimmed = text.trimStart();
+          if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+            return new Response(text, {
+              status: res.status,
+              statusText: res.statusText,
+              headers: res.headers,
+            });
+          }
+          lastResponse = res;
+          await new Promise((r) => setTimeout(r, 3000 * (attempt + 1)));
+        }
+        return lastResponse!;
       }) as typeof fetch;
       if (config.providerId === 'minimax') {
         anthropicOptions.fetch = (async (url: RequestInfo | URL, init?: RequestInit) => {
