@@ -1663,34 +1663,48 @@ export function getModel(config: ModelConfig): ModelWithInfo {
       } else {
         anthropicOptions.apiKey = effectiveApiKey;
       }
-      // Community gateways (AgentRouter) queue requests behind coding-tool
-      // traffic: undici's 5-min header timeout kills queued attempts, and the
-      // gateway sometimes answers only after several tries. Transparently
-      // retry transport-level failures so SDK retries are spent on real
-      // model errors, not on gateway queue lag.
+      // Community gateways (AgentRouter) queue big reasoning prompts behind
+      // coding-tool traffic, and undici's fixed 5-min headers timeout aborts
+      // queued attempts before the gateway answers. Route this provider
+      // through node:https instead, which has no header-phase timeout; a
+      // 15-min guard is the only cap. The response is buffered before being
+      // handed to the SDK, which also sidesteps the gateway's flaky
+      // Content-Type headers.
       anthropicOptions.fetch = (async (url: RequestInfo | URL, init?: RequestInit) => {
-        let lastError: unknown;
-        for (let attempt = 0; attempt < 4; attempt++) {
-          try {
-            return await fetch(url, {
-              ...(init as RequestInit),
-              signal: AbortSignal.timeout(900_000),
-            });
-          } catch (err) {
-            lastError = err;
-            const msg = String(
-              (err as { cause?: { message?: string }; message?: string })?.cause?.message ||
-                (err as { message?: string })?.message ||
-                '',
-            );
-            const transportFailure =
-              /headers timeout|body timeout|other side closed|socket|econnreset|fetch failed/i.test(msg) ||
-              (err as { name?: string })?.name === 'AbortError';
-            if (!transportFailure) throw err;
-            await new Promise((r) => setTimeout(r, 2000 * (attempt + 1)));
-          }
-        }
-        throw lastError;
+        const { request: nodeRequest } = await import('node:https');
+        const u = new URL(url.toString());
+        const headerBag = new Headers(init?.headers);
+        const body = typeof init?.body === 'string' ? init.body : undefined;
+        return new Promise<Response>((resolve, reject) => {
+          const req = nodeRequest(
+            {
+              hostname: u.hostname,
+              port: u.port || 443,
+              path: u.pathname + u.search,
+              method: init?.method || 'GET',
+              headers: Object.fromEntries(headerBag.entries()),
+            },
+            (res) => {
+              const chunks: Buffer[] = [];
+              res.on('data', (c: Buffer) => chunks.push(c));
+              res.on('end', () => {
+                const ct = Array.isArray(res.headers['content-type'])
+                  ? res.headers['content-type'][0]
+                  : res.headers['content-type'];
+                resolve(
+                  new Response(Buffer.concat(chunks), {
+                    status: res.statusCode,
+                    headers: { 'content-type': ct || 'application/json' },
+                  }),
+                );
+              });
+            },
+          );
+          req.setTimeout(900_000, () => req.destroy(new Error('gateway request exceeded 900s')));
+          req.on('error', reject);
+          if (body) req.write(body);
+          req.end();
+        });
       }) as typeof fetch;
       if (config.providerId === 'minimax') {
         anthropicOptions.fetch = (async (url: RequestInfo | URL, init?: RequestInit) => {
