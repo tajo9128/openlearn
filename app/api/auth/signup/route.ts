@@ -1,6 +1,7 @@
 import { type NextRequest } from 'next/server';
 import { apiSuccess, apiError, API_ERROR_CODES } from '@/lib/server/api-response';
 import { signUp, setAuthCookie } from '@/lib/learning/auth';
+import { validateEmailDeliverable } from '@/lib/learning/validate-email';
 import { createLogger } from '@/lib/logger';
 
 const log = createLogger('Auth Signup');
@@ -15,6 +16,13 @@ export async function POST(request: NextRequest) {
 
     if (password.length < 6) {
       return apiError(API_ERROR_CODES.INVALID_REQUEST, 400, 'Password must be at least 6 characters');
+    }
+
+    // Bounced confirmation mails damage the project's sending reputation;
+    // reject undeliverable addresses before Supabase sends anything.
+    const emailCheck = await validateEmailDeliverable(email);
+    if (!emailCheck.ok) {
+      return apiError(API_ERROR_CODES.INVALID_REQUEST, 400, emailCheck.reason ?? 'Invalid email');
     }
 
     const result = await signUp(name, email, password);
