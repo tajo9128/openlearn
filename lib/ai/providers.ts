@@ -1664,10 +1664,34 @@ export function getModel(config: ModelConfig): ModelWithInfo {
         anthropicOptions.apiKey = effectiveApiKey;
       }
       // Community gateways (AgentRouter) queue requests behind coding-tool
-      // traffic; their 60s header timeout is shorter than a big reasoning
-      // prompt needs. 10 min keeps long outline/scene calls alive.
-      anthropicOptions.fetch = (async (url: RequestInfo | URL, init?: RequestInit) =>
-        fetch(url, { ...init, signal: AbortSignal.timeout(600_000) })) as typeof fetch;
+      // traffic: undici's 5-min header timeout kills queued attempts, and the
+      // gateway sometimes answers only after several tries. Transparently
+      // retry transport-level failures so SDK retries are spent on real
+      // model errors, not on gateway queue lag.
+      anthropicOptions.fetch = (async (url: RequestInfo | URL, init?: RequestInit) => {
+        let lastError: unknown;
+        for (let attempt = 0; attempt < 4; attempt++) {
+          try {
+            return await fetch(url, {
+              ...(init as RequestInit),
+              signal: AbortSignal.timeout(900_000),
+            });
+          } catch (err) {
+            lastError = err;
+            const msg = String(
+              (err as { cause?: { message?: string }; message?: string })?.cause?.message ||
+                (err as { message?: string })?.message ||
+                '',
+            );
+            const transportFailure =
+              /headers timeout|body timeout|other side closed|socket|econnreset|fetch failed/i.test(msg) ||
+              (err as { name?: string })?.name === 'AbortError';
+            if (!transportFailure) throw err;
+            await new Promise((r) => setTimeout(r, 2000 * (attempt + 1)));
+          }
+        }
+        throw lastError;
+      }) as typeof fetch;
       if (config.providerId === 'minimax') {
         anthropicOptions.fetch = (async (url: RequestInfo | URL, init?: RequestInit) => {
           const capability = getCatalogThinkingCapability(config.providerId, config.modelId);
