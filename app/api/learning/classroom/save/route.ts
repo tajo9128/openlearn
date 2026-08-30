@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
     // reporting a silent no-op save.
     const result = await supabaseUpdate(
       TABLES.LESSONS,
-      { id: lesson_id },
+      { id: `eq.${lesson_id}` },
       { classroom_id: classroom_id },
     );
     if (result.error) {
