@@ -126,6 +126,30 @@ export async function supabaseUpsert<T = any>(
   }
 }
 
+export async function supabaseUpdate<T = any>(
+  table: string,
+  filters: Record<string, string>,
+  patch: Record<string, unknown>,
+): Promise<SupabaseResult<T>> {
+  try {
+    const params = new URLSearchParams(filters).toString();
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${params}`, {
+      method: 'PATCH',
+      headers: baseHeaders,
+      body: JSON.stringify(patch),
+    });
+    if (!res.ok) {
+      const body = await res.text();
+      return { data: null, error: `Supabase ${res.status}: ${body}` };
+    }
+    const text = await res.text();
+    const data = text ? JSON.parse(text) : null;
+    return { data: Array.isArray(data) ? data[0] : data, error: null };
+  } catch (err) {
+    return { data: null, error: String(err) };
+  }
+}
+
 // ==================== Table Names ====================
 
 export const TABLES = {
