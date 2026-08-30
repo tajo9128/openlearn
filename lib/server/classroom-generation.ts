@@ -333,22 +333,87 @@ export async function generateClassroom(
     scenesGenerated: 0,
   });
 
-  const outlinesResult = await generateSceneOutlinesFromRequirements(
-    requirements,
-    pdfText,
-    undefined,
-    aiCall,
-    {
-      imageGenerationEnabled: input.enableImageGeneration,
-      videoGenerationEnabled: input.enableVideoGeneration,
-      researchContext,
-      // NO teacherContext — agents haven't been generated yet
-    },
-  );
+  // ── Lesson checkpoint ──
+  // Gateway LLM calls fail intermittently; without persistence a failure at
+  // scene N discarded outlines, agents and scenes 1..N-1 on every retry.
+  // Keyed by a hash of the requirement (stable per lesson, unlike the
+  // per-attempt stageId). On retry we reuse the stored outlines and agents
+  // and rebuild only the missing scenes.
+  const partialKey = createHash('sha1').update(requirement).digest('hex').slice(0, 16);
+  const partialPath = path.join(CLASSROOMS_DIR, `_partial_${partialKey}.json`);
+
+  interface LessonCheckpoint {
+    outlines?: unknown[];
+    /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+    agents?: any[];
+    languageDirective?: string;
+    courseTitle?: string;
+    /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+    entries?: any[];
+  }
+  let checkpoint: LessonCheckpoint | null = null;
+  try {
+    const raw = await fs.readFile(partialPath, 'utf8');
+    const parsed = JSON.parse(raw) as LessonCheckpoint;
+    if (parsed && Array.isArray(parsed.outlines) && parsed.outlines.length > 0) {
+      checkpoint = parsed;
+      log.info(
+        `Lesson checkpoint found: ${parsed.outlines?.length ?? 0} outlines, ${parsed.entries?.length ?? 0} banked scenes — resuming`,
+      );
+    }
+  } catch {
+    // no checkpoint — normal first attempt
+  }
+
+  const saveCheckpoint = async (data: LessonCheckpoint) => {
+    try {
+      await fs.mkdir(CLASSROOMS_DIR, { recursive: true });
+      await fs.writeFile(partialPath, JSON.stringify(data));
+    } catch (e) {
+      log.warn('Failed to write lesson checkpoint:', e);
+    }
+  };
+
+  let outlinesResult;
+  if (checkpoint?.outlines?.length) {
+    log.info(`Using ${checkpoint.outlines.length} outlines from lesson checkpoint`);
+    /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+    outlinesResult = {
+      success: true,
+      data: {
+        outlines: checkpoint.outlines,
+        languageDirective: checkpoint.languageDirective || '',
+        courseTitle: checkpoint.courseTitle,
+      },
+    } as any;
+  } else {
+    outlinesResult = await generateSceneOutlinesFromRequirements(
+      requirements,
+      pdfText,
+      undefined,
+      aiCall,
+      {
+        imageGenerationEnabled: input.enableImageGeneration,
+        videoGenerationEnabled: input.enableVideoGeneration,
+        researchContext,
+        // NO teacherContext — agents haven't been generated yet
+      },
+    );
+  }
 
   if (!outlinesResult.success || !outlinesResult.data) {
     log.error('Failed to generate outlines:', outlinesResult.error);
     throw new Error(outlinesResult.error || 'Failed to generate scene outlines');
+  }
+
+  if (!checkpoint?.outlines?.length) {
+    checkpoint = {
+      outlines: outlinesResult.data.outlines,
+      languageDirective: outlinesResult.data.languageDirective,
+      courseTitle: outlinesResult.data.courseTitle,
+      entries: [],
+    };
+    await saveCheckpoint(checkpoint);
   }
 
   const { languageDirective, courseTitle, outlines } = outlinesResult.data;
@@ -378,6 +443,11 @@ export async function generateClassroom(
     }
   } else {
     agents = getDefaultAgents();
+  }
+
+  if (checkpoint && !checkpoint.agents?.length) {
+    checkpoint.agents = agents;
+    await saveCheckpoint(checkpoint);
   }
 
   const stageId = nanoid(10);
@@ -415,52 +485,8 @@ export async function generateClassroom(
 
   log.info('Stage 2: Generating scene content and actions...');
   let generatedScenes = 0;
+  const checkpointEntries = checkpoint?.entries ?? [];
 
-  // ── Scene checkpointing ──
-  // Gateway LLM calls fail intermittently; without a checkpoint a failure at
-  // scene 12 threw away scenes 1-11 on every retry. Persist each completed
-  // scene keyed by a hash of the requirement (stable per lesson, unlike the
-  // per-attempt stageId) so a retried job resumes where it died.
-  const partialDir = CLASSROOMS_DIR;
-  const partialKey = createHash('sha1').update(requirement).digest('hex').slice(0, 16);
-  const partialPath = path.join(partialDir, `_partial_${partialKey}.json`);
-  const outlineFingerprint = createHash('sha1')
-    .update(`${outlines.length}|${outlines.map((o) => o.title).join('|')}`)
-    .digest('hex')
-    .slice(0, 16);
-
-  interface PartialEntry {
-    outline: unknown;
-    /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-    content: any;
-    /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-    actions: any;
-  }
-  const savePartial = async (entries: PartialEntry[]) => {
-    try {
-      await fs.mkdir(partialDir, { recursive: true });
-      await fs.writeFile(
-        partialPath,
-        JSON.stringify({ fingerprint: outlineFingerprint, entries }),
-      );
-    } catch (e) {
-      log.warn('Failed to write scene checkpoint:', e);
-    }
-  };
-
-  let checkpointEntries: PartialEntry[] = [];
-  try {
-    const raw = await fs.readFile(partialPath, 'utf8');
-    const parsed = JSON.parse(raw) as { fingerprint?: string; entries?: PartialEntry[] };
-    if (parsed.fingerprint === outlineFingerprint && Array.isArray(parsed.entries)) {
-      checkpointEntries = parsed.entries;
-      log.info(
-        `Resuming from scene checkpoint: ${checkpointEntries.length}/${outlines.length} scenes already done`,
-      );
-    }
-  } catch {
-    // no checkpoint — normal first attempt
-  }
 
   for (const [index, outline] of outlines.entries()) {
     const safeOutline = applyOutlineFallbacks(outline, true, {
@@ -548,7 +574,10 @@ export async function generateClassroom(
     generatedScenes += 1;
     try {
       checkpointEntries[index] = { outline: safeOutline, content, actions };
-      await savePartial(checkpointEntries);
+      if (checkpoint) {
+        checkpoint.entries = checkpointEntries;
+        await saveCheckpoint(checkpoint);
+      }
     } catch {
       // checkpointing is best-effort
     }
