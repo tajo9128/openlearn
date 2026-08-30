@@ -23,7 +23,10 @@ import { resolveVocationalActive } from '@/lib/config/feature-flags';
 import { buildSearchQuery } from '@/lib/server/search-query-builder';
 import { formatSearchResultsAsContext, searchWeb } from '@/lib/web-search';
 import type { BaiduSubSources, WebSearchProviderId } from '@/lib/web-search/types';
-import { persistClassroom } from '@/lib/server/classroom-storage';
+import { persistClassroom, CLASSROOMS_DIR } from '@/lib/server/classroom-storage';
+import { promises as fs } from 'fs';
+import path from 'path';
+import { createHash } from 'crypto';
 import {
   generateMediaForClassroom,
   replaceMediaPlaceholders,
@@ -413,10 +416,72 @@ export async function generateClassroom(
   log.info('Stage 2: Generating scene content and actions...');
   let generatedScenes = 0;
 
+  // ── Scene checkpointing ──
+  // Gateway LLM calls fail intermittently; without a checkpoint a failure at
+  // scene 12 threw away scenes 1-11 on every retry. Persist each completed
+  // scene keyed by a hash of the requirement (stable per lesson, unlike the
+  // per-attempt stageId) so a retried job resumes where it died.
+  const partialDir = CLASSROOMS_DIR;
+  const partialKey = createHash('sha1').update(requirement).digest('hex').slice(0, 16);
+  const partialPath = path.join(partialDir, `_partial_${partialKey}.json`);
+  const outlineFingerprint = createHash('sha1')
+    .update(`${outlines.length}|${outlines.map((o) => o.title).join('|')}`)
+    .digest('hex')
+    .slice(0, 16);
+
+  interface PartialEntry {
+    outline: unknown;
+    /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+    content: any;
+    /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+    actions: any;
+  }
+  const savePartial = async (entries: PartialEntry[]) => {
+    try {
+      await fs.mkdir(partialDir, { recursive: true });
+      await fs.writeFile(
+        partialPath,
+        JSON.stringify({ fingerprint: outlineFingerprint, entries }),
+      );
+    } catch (e) {
+      log.warn('Failed to write scene checkpoint:', e);
+    }
+  };
+
+  let checkpointEntries: PartialEntry[] = [];
+  try {
+    const raw = await fs.readFile(partialPath, 'utf8');
+    const parsed = JSON.parse(raw) as { fingerprint?: string; entries?: PartialEntry[] };
+    if (parsed.fingerprint === outlineFingerprint && Array.isArray(parsed.entries)) {
+      checkpointEntries = parsed.entries;
+      log.info(
+        `Resuming from scene checkpoint: ${checkpointEntries.length}/${outlines.length} scenes already done`,
+      );
+    }
+  } catch {
+    // no checkpoint — normal first attempt
+  }
+
   for (const [index, outline] of outlines.entries()) {
     const safeOutline = applyOutlineFallbacks(outline, true, {
       allowProceduralSkill: vocationalActive,
     });
+
+    // Rebuild previously completed scenes instead of regenerating them.
+    const checkpointed = checkpointEntries[index];
+    if (checkpointed) {
+      const restoredId = createSceneWithActions(
+        safeOutline,
+        checkpointed.content,
+        checkpointed.actions,
+        api,
+      );
+      if (restoredId) {
+        generatedScenes += 1;
+        continue;
+      }
+      log.warn(`Checkpoint scene ${index + 1} could not be restored; regenerating`);
+    }
     const progressStart = 30 + Math.floor((index / Math.max(outlines.length, 1)) * 60);
 
     await options.onProgress?.({
@@ -481,6 +546,12 @@ export async function generateClassroom(
     }
 
     generatedScenes += 1;
+    try {
+      checkpointEntries[index] = { outline: safeOutline, content, actions };
+      await savePartial(checkpointEntries);
+    } catch {
+      // checkpointing is best-effort
+    }
     const progressEnd = 30 + Math.floor(((index + 1) / Math.max(outlines.length, 1)) * 60);
     await options.onProgress?.({
       step: 'generating_scenes',
@@ -553,6 +624,13 @@ export async function generateClassroom(
   );
 
   log.info(`Classroom persisted: ${persisted.id}, URL: ${persisted.url}`);
+
+  // Lesson fully generated — clear its checkpoint.
+  try {
+    await fs.unlink(partialPath);
+  } catch {
+    // nothing to clean up
+  }
 
   await options.onProgress?.({
     step: 'completed',
