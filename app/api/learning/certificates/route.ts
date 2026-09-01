@@ -14,13 +14,16 @@ const log = createLogger('Learning Certificates API');
 export async function GET(request: NextRequest) {
   try {
     const userId = request.nextUrl.searchParams.get('user_id');
-    if (!userId) {
-      return apiError(API_ERROR_CODES.MISSING_REQUIRED_FIELD, 400, 'Missing user_id parameter');
+    const certId = request.nextUrl.searchParams.get('id');
+
+    if (!userId && !certId) {
+      return apiError(API_ERROR_CODES.MISSING_REQUIRED_FIELD, 400, 'Missing user_id or id parameter');
     }
 
+    // Public verification: allow fetching a single certificate by its id
     const { data, error } = await supabaseQuery(TABLES.CERTIFICATES, {
       select: '*, learning_courses(title, category, difficulty)',
-      filters: { user_id: `eq.${userId}` },
+      filters: certId ? { id: `eq.${certId}` } : { user_id: `eq.${userId}` },
     });
 
     if (error) {

@@ -13,8 +13,8 @@ export default function CertificatePage() {
 
   useEffect(() => {
     if (!id) return;
-    const userId =
-      getUserId();
+    const params = new URLSearchParams(window.location.search);
+    const userId = params.get('user_id') || getUserId();
     fetch(`/api/learning/certificates?user_id=${userId}`)
       .then((r) => r.json())
       .then((d) => {
