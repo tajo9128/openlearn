@@ -4,6 +4,9 @@ import { notFound } from 'next/navigation';
 
 const BASE = 'https://learn.biodockify.com';
 
+// Always render fresh: a transient upstream failure must not cache a 404 for a real lesson.
+export const dynamic = "force-dynamic";
+
 type LessonRow = {
   id: string;
   title: string;
