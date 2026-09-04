@@ -89,7 +89,15 @@ export function buildTimeline(
   scenes: readonly CompilerScene[],
   opts: ResolveTimelineOptions,
 ): TimelineResult {
-  const segments = resolveActionTimeline(scenes as CompilerScene[], opts);
+  // YouTube/public exports trim non-teaching scenes: quizzes, interactive
+  // exercises, PBL workshops and practice checks render as placeholders that
+  // don't make sense in a linear video, so exclude them entirely.
+  const TRIM_RE = /quiz|knowledge check|practice|exercise|workshop/i;
+  const activeScenes = (scenes as CompilerScene[]).filter(
+    (s) => s.type === 'slide' && !TRIM_RE.test(s.title || ''),
+  );
+
+  const segments = resolveActionTimeline(activeScenes, opts);
 
   // Cursor completion clock: fire-and-forget effects advance the cursor by 0, so
   // they never extend it — this is the total playback duration.
@@ -105,7 +113,7 @@ export function buildTimeline(
     if (!sceneStartMs.has(seg.sceneIndex)) sceneStartMs.set(seg.sceneIndex, seg.startMs);
   }
 
-  const buckets = scenes.map(() => emptyBuckets());
+  const buckets = activeScenes.map(() => emptyBuckets());
   const diagnostics: Diagnostic[] = [];
   const subtitles: SubtitleCue[] = [];
   let ttsEnabled = false;
@@ -118,7 +126,7 @@ export function buildTimeline(
     });
   }
 
-  const irScenes: VideoTimelineScene[] = scenes.map((scene, index) => {
+  const irScenes: VideoTimelineScene[] = activeScenes.map((scene, index) => {
     const start = sceneStartMs.get(index) ?? 0;
     const end = sceneStartMs.get(index + 1) ?? totalDurationMs;
     const supported = scene.type === 'slide';
