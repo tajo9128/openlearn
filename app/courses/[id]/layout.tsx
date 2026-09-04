@@ -1,28 +1,55 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 
 const BASE = 'https://learn.biodockify.com';
 
-type CourseMeta = {
+type CourseRow = {
   id: string;
   title: string;
   description: string | null;
+  category: string | null;
   updated_at?: string | null;
 };
 
-async function courseMeta(id: string): Promise<CourseMeta | null> {
+const HEADERS = () => ({
+  apikey: process.env.SUPABASE_ANON_KEY || '',
+  Authorization: `Bearer ${process.env.SUPABASE_ANON_KEY || ''}`,
+});
+
+async function courseMeta(id: string): Promise<CourseRow | null> {
   try {
-    const key = process.env.SUPABASE_ANON_KEY || '';
-    const url = process.env.SUPABASE_URL || '';
-    if (!key || !url) return null;
     const res = await fetch(
-      `${url}/rest/v1/learning_courses?id=eq.${id}&select=id,title,description,updated_at`,
-      { headers: { apikey: key, Authorization: `Bearer ${key}` }, next: { revalidate: 3600 } },
+      `${process.env.SUPABASE_URL}/rest/v1/learning_courses?id=eq.${id}&select=id,title,description,category,updated_at`,
+      { headers: HEADERS(), next: { revalidate: 3600 } },
     );
     if (!res.ok) return null;
-    const rows = (await res.json()) as CourseMeta[];
+    const rows = (await res.json()) as CourseRow[];
     return rows[0] ?? null;
   } catch {
     return null;
+  }
+}
+
+/** Related courses: same category first, then any other published course. */
+async function relatedCourses(course: CourseRow): Promise<CourseRow[]> {
+  try {
+    const same = await fetch(
+      `${process.env.SUPABASE_URL}/rest/v1/learning_courses?is_published=eq.true&category=eq.${course.category}&id=neq.${course.id}&select=id,title,description,category&limit=3`,
+      { headers: HEADERS(), next: { revalidate: 3600 } },
+    );
+    let rows: CourseRow[] = same.ok ? (await same.json()) : [];
+    if (rows.length < 3) {
+      const more = await fetch(
+        `${process.env.SUPABASE_URL}/rest/v1/learning_courses?is_published=eq.true&id=neq.${course.id}&select=id,title,description,category&limit=8`,
+        { headers: HEADERS(), next: { revalidate: 3600 } },
+      );
+      const extra = more.ok ? ((await more.json()) as CourseRow[]) : [];
+      const seen = new Set(rows.map((r) => r.id));
+      rows = [...rows, ...extra.filter((e) => !seen.has(e.id))].slice(0, 3);
+    }
+    return rows;
+  } catch {
+    return [];
   }
 }
 
@@ -55,6 +82,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 export default async function CourseLayout({ children, params }: { children: React.ReactNode; params: Promise<{ id: string }> }) {
   const { id } = await params;
   const course = await courseMeta(id);
+  const related = course ? await relatedCourses(course) : [];
   const jsonLd = course
     ? {
         '@context': 'https://schema.org',
@@ -65,15 +93,53 @@ export default async function CourseLayout({ children, params }: { children: Rea
         url: `${BASE}/courses/${course.id}`,
       }
     : null;
+  const breadcrumbLd = course
+    ? {
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: 'Home', item: BASE },
+          { '@type': 'ListItem', position: 2, name: 'Courses', item: `${BASE}/courses` },
+          { '@type': 'ListItem', position: 3, name: course.title, item: `${BASE}/courses/${course.id}` },
+        ],
+      }
+    : null;
+
   return (
     <>
       {jsonLd ? (
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-        />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      ) : null}
+      {breadcrumbLd ? (
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }} />
       ) : null}
       {children}
+      {course && related.length > 0 ? (
+        <section className="max-w-5xl mx-auto px-4 pb-16">
+          <nav className="text-sm text-neutral-400 mb-3">
+            <Link href="/" className="hover:text-emerald-400">Home</Link>
+            <span className="mx-2">›</span>
+            <Link href="/courses" className="hover:text-emerald-400">Courses</Link>
+            <span className="mx-2">›</span>
+            <span className="text-neutral-300">{course.title}</span>
+          </nav>
+          <h2 className="text-xl font-semibold text-neutral-200 mb-4">Related courses</h2>
+          <div className="grid gap-4 sm:grid-cols-3">
+            {related.map((r) => (
+              <Link
+                key={r.id}
+                href={`/courses/${r.id}`}
+                className="block p-4 bg-neutral-900 border border-neutral-800 rounded-xl hover:border-emerald-700 transition-colors"
+              >
+                <p className="font-medium text-neutral-100">{r.title}</p>
+                <p className="text-sm text-neutral-400 mt-1 line-clamp-2">
+                  {(r.description || '').slice(0, 90)}
+                </p>
+              </Link>
+            ))}
+          </div>
+        </section>
+      ) : null}
     </>
   );
 }
