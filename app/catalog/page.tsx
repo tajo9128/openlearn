@@ -53,6 +53,16 @@ export default async function CatalogPage() {
         <p className="text-neutral-400 mb-10">
           {courses.length} free AI-narrated courses — press play once, watch each lesson like a movie.
         </p>
+        <section className="mb-10">
+          <h2 className="text-2xl font-semibold text-emerald-300 mb-4">Career tracks</h2>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {['pharma-ai-career', 'bioinformatician', 'ai-engineer', 'python-data', 'healthcare-ai', 'research-scientist'].map((t) => (
+              <Link key={t} href={`/track/${t}`} className="p-4 bg-neutral-900 border border-neutral-800 rounded-xl hover:border-emerald-700 transition-colors">
+                {t.split('-').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
+              </Link>
+            ))}
+          </div>
+        </section>
         {orderedKeys.map((key) => (
           <section key={key} className="mb-10">
             <h2 className="text-2xl font-semibold text-emerald-300 mb-4">

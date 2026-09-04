@@ -53,6 +53,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: BASE, changeFrequency: 'weekly', priority: 1 },
     { url: `${BASE}/courses`, changeFrequency: 'daily', priority: 0.9 },
     { url: `${BASE}/catalog`, changeFrequency: 'weekly', priority: 0.8 },
+    { url: `${BASE}/track/pharma-ai-career`, changeFrequency: 'monthly', priority: 0.8 },
+    { url: `${BASE}/track/bioinformatician`, changeFrequency: 'monthly', priority: 0.8 },
+    { url: `${BASE}/track/ai-engineer`, changeFrequency: 'monthly', priority: 0.8 },
+    { url: `${BASE}/track/python-data`, changeFrequency: 'monthly', priority: 0.8 },
+    { url: `${BASE}/track/healthcare-ai`, changeFrequency: 'monthly', priority: 0.8 },
+    { url: `${BASE}/track/research-scientist`, changeFrequency: 'monthly', priority: 0.8 },
   ];
 
   const courses = await publishedCourses();
