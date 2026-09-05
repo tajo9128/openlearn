@@ -105,7 +105,7 @@ export function CodeEditor({ value, onChange }: CodeEditorProps) {
       viewRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [containerRef.current]); // Re-run if containerRef becomes available
+  }, [containerRef.current, value, onChange]); // Re-run if containerRef becomes available
 
   // Update editor content when value changes externally (e.g., template load)
   useEffect(() => {
