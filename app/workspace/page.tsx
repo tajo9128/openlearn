@@ -81,7 +81,26 @@ export default function WorkspacePage() {
     setFigures([]);
     // Detect packages from current template
     const currentTemplate = TEMPLATES.find((t) => t.code === code);
-    const packages = currentTemplate?.packages ?? [];
+    const packages = currentTemplate?.packages ? [...currentTemplate.packages] : [];
+
+    // Auto-detect package imports from user's code
+    const importPatterns: [RegExp, string][] = [
+      [/\b(import numpy|from numpy)\b/, 'numpy'],
+      [/\b(import pandas|from pandas)\b/, 'pandas'],
+      [/\b(import matplotlib|from matplotlib)\b/, 'matplotlib'],
+      [/\b(import scipy|from scipy)\b/, 'scipy'],
+      [/\b(import sklearn|from sklearn)\b/, 'scikit-learn'],
+      [/\b(import Bio|from Bio)\b/, 'biopython'],
+      [/\b(import networkx|from networkx)\b/, 'networkx'],
+      [/\b(import sympy|from sympy)\b/, 'sympy'],
+    ];
+
+    for (const [pattern, pkg] of importPatterns) {
+      if (pattern.test(code) && !packages.includes(pkg)) {
+        packages.push(pkg);
+      }
+    }
+
     runnerRef.current.runCode(code, packages);
   };
 
@@ -103,6 +122,12 @@ export default function WorkspacePage() {
       {/* Top toolbar */}
       <div className="flex items-center justify-between px-4 py-2 bg-[#161b22] border-b border-neutral-800">
         <div className="flex items-center gap-3">
+          <a
+            href="/courses"
+            className="text-xs text-neutral-400 hover:text-emerald-400 flex items-center gap-1 transition-colors pr-2 border-r border-neutral-800"
+          >
+            &larr; Courses
+          </a>
           <FlaskConical className="w-5 h-5 text-emerald-400" />
           <span className="font-semibold text-neutral-200">BioDockify Workspace</span>
           {/* Package badges */}

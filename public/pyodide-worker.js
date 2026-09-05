@@ -11,38 +11,64 @@
  *                  { type: 'error', message: string, traceback?: string }
  */
 
+const PYODIDE_CDN_BASE = 'https://cdn.jsdelivr.net/pyodide/v0.27.2/full/';
+
 let pyodide = null;
-let pyodideReady = false;
+let pyodideLoadingPromise = null;
+
+const BUILTIN_PACKAGES = new Set([
+  'numpy',
+  'pandas',
+  'scipy',
+  'matplotlib',
+  'scikit-learn',
+  'biopython',
+  'networkx',
+  'sympy',
+  'regex',
+  'micropip',
+  'sqlite3',
+  'sqlalchemy',
+]);
 
 async function loadPyodide() {
-  if (pyodideReady) return pyodide;
+  if (pyodide) return pyodide;
+  if (pyodideLoadingPromise) return pyodideLoadingPromise;
 
-  postMessage({ type: 'status', state: 'loading' });
+  pyodideLoadingPromise = (async () => {
+    postMessage({ type: 'status', state: 'loading' });
 
-  // Load Pyodide from CDN
-  importScripts('https://cdn.jsdelivr.net/pyodide/v0.27.2/full/pyodide.js');
+    // Load Pyodide from CDN
+    importScripts(`${PYODIDE_CDN_BASE}pyodide.js`);
 
-  pyodide = await globalThis.loadPyodide();
+    pyodide = await globalThis.loadPyodide({
+      indexURL: PYODIDE_CDN_BASE,
+    });
 
-  // Redirect stdout/stderr to main thread
-  pyodide.setStdout({
-    batched: (text) => {
-      if (text) postMessage({ type: 'output', stream: 'stdout', text });
-    },
-  });
-  pyodide.setStderr({
-    batched: (text) => {
-      if (text) postMessage({ type: 'output', stream: 'stderr', text });
-    },
-  });
+    // Redirect stdout/stderr to main thread
+    pyodide.setStdout({
+      batched: (text) => {
+        if (text) postMessage({ type: 'output', stream: 'stdout', text: text + '\n' });
+      },
+    });
+    pyodide.setStderr({
+      batched: (text) => {
+        if (text) postMessage({ type: 'output', stream: 'stderr', text: text + '\n' });
+      },
+    });
 
-  // Pre-load common packages
-  await pyodide.loadPackage(['micropip']);
+    // Pre-load micropip for dynamic package installation
+    try {
+      await pyodide.loadPackage('micropip');
+    } catch (e) {
+      console.warn('micropip pre-load warning:', e);
+    }
 
-  pyodideReady = true;
-  postMessage({ type: 'status', state: 'ready' });
+    postMessage({ type: 'status', state: 'ready' });
+    return pyodide;
+  })();
 
-  return pyodide;
+  return pyodideLoadingPromise;
 }
 
 async function ensurePackages(packages) {
@@ -51,22 +77,56 @@ async function ensurePackages(packages) {
   const py = await loadPyodide();
 
   for (const pkg of packages) {
+    const pkgLower = pkg.toLowerCase();
     try {
-      // Try loading from Pyodide's built-in packages first (faster)
-      if (['numpy', 'pandas', 'scipy', 'matplotlib', 'networkx', 'sympy', 'regex', 'micropip'].includes(pkg)) {
-        await py.loadPackage(pkg);
+      if (BUILTIN_PACKAGES.has(pkgLower)) {
+        await py.loadPackage(pkgLower);
       } else {
-        // Use micropip for packages not in the default set (e.g., rdkit)
-        await py.runPythonAsync(`import micropip; await micropip.install('${pkg}')`);
+        await py.runPythonAsync(`import micropip\nawait micropip.install('${pkg}')`);
       }
       postMessage({ type: 'output', stream: 'stdout', text: `[Loaded: ${pkg}]\n` });
     } catch (err) {
-      postMessage({ type: 'output', stream: 'stderr', text: `[Failed to load ${pkg}: ${err.message}]\n` });
+      postMessage({
+        type: 'output',
+        stream: 'stderr',
+        text: `[Failed to load ${pkg}: ${err.message || String(err)}]\n`,
+      });
     }
   }
 }
 
+async function setupMatplotlib(py) {
+  try {
+    await py.runPythonAsync(`
+try:
+    import matplotlib
+    matplotlib.use('Agg')
+    import matplotlib.pyplot as plt
+    import io as _io
+    import base64 as _b64
+
+    def _biodockify_capture_figure(*args, **kwargs):
+        fig = plt.gcf()
+        if fig.get_size_inches().sum() > 0:
+            buf = _io.BytesIO()
+            fig.savefig(buf, format='png', dpi=100, bbox_inches='tight')
+            buf.seek(0)
+            img_data = _b64.b64encode(buf.read()).decode()
+            print(f"__FIGURE__:{img_data}")
+        plt.close('all')
+
+    plt.show = _biodockify_capture_figure
+except Exception:
+    pass
+`);
+  } catch {
+    // Matplotlib not loaded yet
+  }
+}
+
 async function runCode(code, packages) {
+  postMessage({ type: 'status', state: 'running' });
+
   const py = await loadPyodide();
 
   // Install packages if requested
@@ -74,59 +134,27 @@ async function runCode(code, packages) {
     await ensurePackages(packages);
   }
 
-  // Set up matplotlib for inline rendering (capture figures as base64)
-  try {
-    await py.runPythonAsync(`
-import matplotlib
-matplotlib.use('Agg')
-import io as _io
-import base64 as _b64
-
-class _FigureCapture:
-    def __init__(self):
-        self._orig_show = matplotlib.pyplot.show
-        matplotlib.pyplot.show = self._capture
-    def _capture(self, *args, **kwargs):
-        fig = matplotlib.pyplot.gcf()
-        if fig.get_size_inches().sum() > 0:
-            buf = _io.BytesIO()
-            fig.savefig(buf, format='png', dpi=100, bbox_inches='tight')
-            buf.seek(0)
-            img_data = _b64.b64encode(buf.read()).decode()
-            print(f"__FIGURE__:{img_data}")
-        matplotlib.pyplot.close('all')
-
-_fig_cap = _FigureCapture()
-`);
-  } catch {
-    // matplotlib not available yet — that's ok
-  }
-
-  postMessage({ type: 'status', state: 'running' });
+  // Set up figure capture if matplotlib is present
+  await setupMatplotlib(py);
 
   try {
     // Run the user code
     const result = await py.runPythonAsync(code);
 
-    // If there's a non-None result, print it
+    // If there's a return value (not None), print it
     if (result !== undefined && result !== null) {
       const resultStr = String(result);
       if (resultStr && resultStr !== 'None') {
         postMessage({ type: 'output', stream: 'stdout', text: resultStr + '\n' });
       }
     }
-
-    postMessage({ type: 'status', state: 'ready' });
-    postMessage({ type: 'done' });
   } catch (err) {
     let traceback = err.message || String(err);
-
-    // Try to extract Python traceback
     if (err.traceback) {
       traceback = err.traceback;
     }
-
     postMessage({ type: 'error', message: traceback, traceback });
+  } finally {
     postMessage({ type: 'status', state: 'ready' });
     postMessage({ type: 'done' });
   }
