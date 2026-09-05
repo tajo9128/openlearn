@@ -217,7 +217,7 @@ export default function WorkspacePage() {
             <span className="text-xs text-neutral-500">main.py</span>
           </div>
           <div className="flex-1 overflow-hidden">
-            <CodeEditor value={code} onChange={setCode} />
+            <CodeEditor key={Date.now()} value={code} onChange={setCode} />
           </div>
         </div>
 
