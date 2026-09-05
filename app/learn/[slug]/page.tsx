@@ -10,7 +10,6 @@ export const dynamic = "force-dynamic";
 type LessonRow = {
   id: string;
   title: string;
-  description: string | null;
   content: string | null;
   duration_minutes: number | null;
   course_id: string;
@@ -41,7 +40,7 @@ export function slugForLesson(title: string, id: string): string {
 async function getData(lessonId: string) {
   try {
     const res = await fetch(
-      `${process.env.SUPABASE_URL}/rest/v1/learning_lessons?id=eq.${lessonId}&select=id,title,description,content,duration_minutes,course_id`,
+      `${process.env.SUPABASE_URL}/rest/v1/learning_lessons?id=eq.${lessonId}&select=id,title,content,duration_minutes,course_id`,
       { headers: HEADERS(), next: { revalidate: 86400 } },
     );
     if (!res.ok) return null;
@@ -98,7 +97,6 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   if (!data) return { title: 'Topic | BioDockify Learn' };
   const title = `${data.lesson.title} — Explained Simply | BioDockify Learn`;
   const description =
-    stripTags(data.lesson.description || '') ||
     stripTags(data.lesson.content || '').slice(0, 155) ||
     'Learn this topic free with an AI-narrated lesson on BioDockify Learn.';
   return {
@@ -117,7 +115,7 @@ export default async function LearnTopicPage({ params }: { params: Promise<{ slu
   if (!data) notFound();
   const { lesson, course } = data;
   const sections = htmlToSections(lesson.content || '');
-  const intro = stripTags(lesson.description || '');
+  const intro = stripTags(lesson.content || '').slice(0, 220);
 
   // Related lessons from the same course (internal links)
   let related: { slug: string; title: string }[] = [];
