@@ -26,7 +26,6 @@ export async function GET(request: NextRequest) {
     const { data, error } = await supabaseQuery(TABLES.EXERCISES, {
       select: '*',
       filters,
-      order: { column: 'sort_order', ascending: true },
     });
 
     if (error) {
