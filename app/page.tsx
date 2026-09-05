@@ -607,14 +607,14 @@ function HomePage() {
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-bold text-white group-hover:text-emerald-300 transition-colors">
-                      6 AI-Powered Courses Are Live!
+                      21 AI-Powered Courses Are Live!
                     </span>
                     <span className="text-[10px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                      71 Lessons • Free
+                      300+ Lessons • Free
                     </span>
                   </div>
                   <p className="text-xs text-neutral-400 mt-0.5 line-clamp-1">
-                    Python, AI Drug Discovery, Data Science, Structural Biology, Pharmacology & RDKit
+                    NEW: PyTorch Deep Learning, LLM Engineering, AI Agents, GANs &amp; Diffusion, Healthcare AI • Plus Python, Drug Discovery, Bioinformatics, Pharmacology
                   </p>
                 </div>
               </div>

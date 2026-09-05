@@ -54,6 +54,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { AlertTriangle } from 'lucide-react';
 import { VisuallyHidden } from 'radix-ui';
+import { markLessonCompletedFromPlayer } from '@/lib/learning/player-completion';
 
 /**
  * Imperative handle exposed via `ref` so the parent (`Stage`) can tear
@@ -758,10 +759,11 @@ export const PlaybackChromeRoot = forwardRef<PlaybackChromeRootHandle, PlaybackC
                   }
                   autoStartRef.current = true;
                   stageState.setCurrentSceneId(allScenes[idx + 1].id);
-                } else if (
-                  idx === allScenes.length - 1 &&
-                  stageState.generatingOutlines.length > 0
-                ) {
+                } else if (idx === allScenes.length - 1) {
+                  // Lecture finished (last scene exhausted, nothing generating).
+                  const stageId = stageState.stage?.id;
+                  if (stageId) void markLessonCompletedFromPlayer(stageId);
+                  if (stageState.generatingOutlines.length > 0) {
                   // Last scene exhausted but next is still generating — go to pending page
                   const currentScene = allScenes[idx];
                   if (
@@ -773,6 +775,7 @@ export const PlaybackChromeRoot = forwardRef<PlaybackChromeRootHandle, PlaybackC
                   }
                   autoStartRef.current = true;
                   stageState.setCurrentSceneId(PENDING_SCENE_ID);
+                  }
                 }
               }, 1500);
             }
