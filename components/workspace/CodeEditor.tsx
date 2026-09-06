@@ -55,9 +55,7 @@ export function CodeEditor({ value, onChange }: CodeEditorProps) {
   const viewRef = useRef<EditorView | null>(null);
 
   useEffect(() => {
-    if (!containerRef.current) return;
-    // Only initialize if not already initialized
-    if (viewRef.current) return;
+    if (!containerRef.current || viewRef.current) return;
 
     try {
       const extensions = [
@@ -88,7 +86,6 @@ export function CodeEditor({ value, onChange }: CodeEditorProps) {
       viewRef.current = view;
     } catch (err) {
       console.error('Failed to init CodeMirror:', err);
-      // Fallback: render a simple textarea
       if (containerRef.current && !viewRef.current) {
         const ta = document.createElement('textarea');
         ta.value = value;
@@ -104,8 +101,7 @@ export function CodeEditor({ value, onChange }: CodeEditorProps) {
       viewRef.current?.destroy();
       viewRef.current = null;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [containerRef.current, value, onChange]); // Re-run if containerRef becomes available
+  }, []);
 
   // Update editor content when value changes externally (e.g., template load)
   useEffect(() => {
