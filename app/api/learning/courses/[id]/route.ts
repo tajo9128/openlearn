@@ -36,9 +36,11 @@ export async function GET(
       order: { column: 'sort_order', ascending: true },
     });
 
-    // Fetch lessons for all modules
+    // Fetch lessons — by module IDs where available, plus course-level
+    // lessons that have no module assigned (module_id IS NULL).
     const moduleIds = (modules ?? []).map((m: any) => m.id);
     let lessons: any[] = [];
+
     if (moduleIds.length > 0) {
       const { data } = await supabaseQuery(TABLES.LESSONS, {
         filters: { module_id: `in.(${moduleIds.join(',')})` },
@@ -47,11 +49,29 @@ export async function GET(
       lessons = data ?? [];
     }
 
+    // Also fetch lessons assigned to the course but not to any module
+    const { data: courseLessons } = await supabaseQuery(TABLES.LESSONS, {
+      filters: { course_id: `eq.${id}`, module_id: 'is.null' },
+      order: { column: 'sort_order', ascending: true },
+    });
+
+    // Merge — avoid duplicates
+    const seenIds = new Set(lessons.map((l: any) => l.id));
+    for (const l of courseLessons ?? []) {
+      if (!seenIds.has(l.id)) lessons.push(l);
+    }
+
     // Combine modules with their lessons
     const modulesWithLessons = (modules ?? []).map((mod: any) => ({
       ...mod,
       lessons: lessons.filter((l: any) => l.module_id === mod.id),
     }));
+
+    // Lessons with no module go into a synthetic "Lessons" group
+    const orphanLessons = lessons.filter((l: any) => !l.module_id);
+    if (orphanLessons.length > 0) {
+      modulesWithLessons.push({ id: 'unsorted', title: 'Lessons', lessons: orphanLessons });
+    }
 
     return apiSuccess({ course, modules: modulesWithLessons });
   } catch (error) {
