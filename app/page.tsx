@@ -167,6 +167,13 @@ function HomePage() {
   const [thumbnails, setThumbnails] = useState<Record<string, Slide>>({});
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [showDbNotice, setShowDbNotice] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && !localStorage.getItem('db_notice_dismissed')) {
+      setShowDbNotice(true);
+    }
+  }, []);
   const [searchQuery, setSearchQuery] = useState('');
   const searchInputRef = useRef<HTMLInputElement>(null);
   const searchButtonRef = useRef<HTMLButtonElement>(null);
@@ -432,6 +439,48 @@ function HomePage() {
 
   return (
     <div className="min-h-[100dvh] w-full bg-gradient-to-b from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 flex flex-col items-center p-4 pt-16 md:p-8 md:pt-16 overflow-x-hidden">
+      {/* Database reset notice */}
+      {showDbNotice && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="relative w-full max-w-lg rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-2xl p-6 md:p-8">
+            <button
+              onClick={() => { setShowDbNotice(false); localStorage.setItem('db_notice_dismissed', '1'); }}
+              className="absolute top-3 right-3 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="flex-shrink-0 w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center">
+                <span className="text-xl">⚠️</span>
+              </div>
+              <h2 className="text-lg font-bold text-slate-900 dark:text-white">Important Notice</h2>
+            </div>
+            <p className="text-slate-600 dark:text-slate-300 text-sm leading-relaxed mb-4">
+              We accidentally deleted the user database during a server migration. If you had an account before, your profile and learning progress have been reset.
+            </p>
+            <p className="text-slate-600 dark:text-slate-300 text-sm leading-relaxed mb-6">
+              Please <strong>sign up again</strong> and <strong>re-enroll</strong> in your courses to continue learning. We sincerely apologize for the inconvenience.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Link
+                href="/auth/signup"
+                onClick={() => { setShowDbNotice(false); localStorage.setItem('db_notice_dismissed', '1'); }}
+                className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-emerald-600 text-white font-medium text-sm hover:bg-emerald-700 transition-colors"
+              >
+                Sign Up Now
+              </Link>
+              <Link
+                href="/courses"
+                onClick={() => { setShowDbNotice(false); localStorage.setItem('db_notice_dismissed', '1'); }}
+                className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium text-sm hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+              >
+                Browse Courses
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
+
       <input
         ref={fileInputRef}
         type="file"
