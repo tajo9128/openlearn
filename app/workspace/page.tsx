@@ -33,11 +33,6 @@ export default function WorkspacePage() {
 
     runner.onStatus = (state) => {
       setStatus(state);
-      if (state === 'loading') {
-        addOutput('stdout', '[Loading Pyodide runtime... this may take 10-20 seconds on first load]\n');
-      } else if (state === 'ready') {
-        addOutput('stdout', '[Pyodide ready. Python ' + '3.12' + ' loaded.]\n');
-      }
     };
 
     runner.onOutput = (stream, text) => {
@@ -77,7 +72,8 @@ export default function WorkspacePage() {
 
   const handleRun = () => {
     if (!runnerRef.current || isRunning) return;
-    // Clear previous figures
+    // Each run shows only its own result
+    setOutputLines([]);
     setFigures([]);
     // Detect packages from current template
     const currentTemplate = TEMPLATES.find((t) => t.code === code);

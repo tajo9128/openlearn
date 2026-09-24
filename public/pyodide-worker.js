@@ -58,7 +58,6 @@ async function loadPyodide() {
     let lastErr = null;
     for (const base of CDN_BASES) {
       try {
-        report(`[Loading Python runtime from ${new URL(base).host}...]`);
         const py = await tryLoadFromBase(base);
         activeCdnBase = base;
 
