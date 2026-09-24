@@ -11,10 +11,17 @@
  *                  { type: 'error', message: string, traceback?: string }
  */
 
-const PYODIDE_CDN_BASE = 'https://cdn.jsdelivr.net/pyodide/v0.27.2/full/';
+// CDN fallback chain — jsdelivr is unreachable from some networks (e.g. parts
+// of India), so fall through to mirrors before giving up.
+const CDN_BASES = [
+  'https://cdn.jsdelivr.net/pyodide/v0.27.2/full/',
+  'https://cdn.gcore.com/pyodide/v0.27.2/full/',
+  'https://fastly.jsdelivr.net/pyodide/v0.27.2/full/',
+];
 
 let pyodide = null;
 let pyodideLoadingPromise = null;
+let activeCdnBase = CDN_BASES[0];
 
 const BUILTIN_PACKAGES = new Set([
   'numpy',
@@ -31,6 +38,16 @@ const BUILTIN_PACKAGES = new Set([
   'sqlalchemy',
 ]);
 
+function report(text) {
+  postMessage({ type: 'output', stream: 'stdout', text: text + '\n' });
+}
+
+async function tryLoadFromBase(base) {
+  importScripts(`${base}pyodide.js`);
+  const py = await globalThis.loadPyodide({ indexURL: base });
+  return py;
+}
+
 async function loadPyodide() {
   if (pyodide) return pyodide;
   if (pyodideLoadingPromise) return pyodideLoadingPromise;
@@ -38,34 +55,49 @@ async function loadPyodide() {
   pyodideLoadingPromise = (async () => {
     postMessage({ type: 'status', state: 'loading' });
 
-    // Load Pyodide from CDN
-    importScripts(`${PYODIDE_CDN_BASE}pyodide.js`);
+    let lastErr = null;
+    for (const base of CDN_BASES) {
+      try {
+        report(`[Loading Python runtime from ${new URL(base).host}...]`);
+        const py = await tryLoadFromBase(base);
+        activeCdnBase = base;
 
-    pyodide = await globalThis.loadPyodide({
-      indexURL: PYODIDE_CDN_BASE,
-    });
+        // Redirect stdout/stderr to main thread
+        py.setStdout({
+          batched: (text) => {
+            if (text) postMessage({ type: 'output', stream: 'stdout', text: text + '\n' });
+          },
+        });
+        py.setStderr({
+          batched: (text) => {
+            if (text) postMessage({ type: 'output', stream: 'stderr', text: text + '\n' });
+          },
+        });
 
-    // Redirect stdout/stderr to main thread
-    pyodide.setStdout({
-      batched: (text) => {
-        if (text) postMessage({ type: 'output', stream: 'stdout', text: text + '\n' });
-      },
-    });
-    pyodide.setStderr({
-      batched: (text) => {
-        if (text) postMessage({ type: 'output', stream: 'stderr', text: text + '\n' });
-      },
-    });
+        // Pre-load micropip for dynamic package installation
+        try {
+          await py.loadPackage('micropip');
+        } catch (e) {
+          console.warn('micropip pre-load warning:', e);
+        }
 
-    // Pre-load micropip for dynamic package installation
-    try {
-      await pyodide.loadPackage('micropip');
-    } catch (e) {
-      console.warn('micropip pre-load warning:', e);
+        postMessage({ type: 'status', state: 'ready' });
+        pyodide = py;
+        return py;
+      } catch (err) {
+        lastErr = err;
+        report(`[Runtime source ${new URL(base).host} failed — trying next mirror...]`);
+      }
     }
 
-    postMessage({ type: 'status', state: 'ready' });
-    return pyodide;
+    // All mirrors failed — allow a clean retry on the next Run click
+    pyodideLoadingPromise = null;
+    postMessage({ type: 'status', state: 'error' });
+    throw new Error(
+      'Failed to load Python runtime from all mirrors. Check your internet connection and press Run again. (' +
+        (lastErr ? String(lastErr).slice(0, 120) : 'unknown error') +
+        ')'
+    );
   })();
 
   return pyodideLoadingPromise;
@@ -176,8 +208,7 @@ self.onmessage = async function (e) {
     try {
       await loadPyodide();
     } catch (err) {
-      postMessage({ type: 'error', message: 'Failed to load Pyodide: ' + String(err) });
-      postMessage({ type: 'status', state: 'error' });
+      // Error already reported through output; stay retryable.
     }
   }
 };
