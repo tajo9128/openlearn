@@ -45,6 +45,36 @@ function report(text) {
 async function tryLoadFromBase(base) {
   importScripts(`${base}pyodide.js`);
   const py = await globalThis.loadPyodide({ indexURL: base });
+
+  // Redirect stdout/stderr from inside Python. pyodide.setStdout({batched})
+  // proved unreliable in this environment; a JsProxy writer works across
+  // Pyodide builds and flushes line-by-line to the main thread.
+  py.globals.set('_js_stdout', (s) => {
+    if (s) postMessage({ type: 'output', stream: 'stdout', text: s });
+  });
+  py.globals.set('_js_stderr', (s) => {
+    if (s) postMessage({ type: 'output', stream: 'stderr', text: s });
+  });
+  await py.runPython(`
+import sys
+
+class _JSWriter:
+    def __init__(self, cb):
+        self._cb = cb
+        self._buf = []
+    def write(self, s):
+        self._buf.append(s)
+        if '\n' in s:
+            self.flush()
+    def flush(self):
+        out = ''.join(self._buf)
+        self._buf = []
+        if out:
+            self._cb(out)
+
+sys.stdout = _JSWriter(_js_stdout)
+sys.stderr = _JSWriter(_js_stderr)
+`);
   return py;
 }
 
@@ -61,18 +91,6 @@ async function loadPyodide() {
         const py = await tryLoadFromBase(base);
         activeCdnBase = base;
 
-        // Redirect stdout/stderr to main thread
-        py.setStdout({
-          batched: (text) => {
-            if (text) postMessage({ type: 'output', stream: 'stdout', text: text + '\n' });
-          },
-        });
-        py.setStderr({
-          batched: (text) => {
-            if (text) postMessage({ type: 'output', stream: 'stderr', text: text + '\n' });
-          },
-        });
-
         // Pre-load micropip for dynamic package installation
         try {
           await py.loadPackage('micropip');
@@ -85,7 +103,7 @@ async function loadPyodide() {
         return py;
       } catch (err) {
         lastErr = err;
-        report(`[Runtime source ${new URL(base).host} failed — trying next mirror...]`);
+        report(`[Python runtime source ${new URL(base).host} failed — trying next mirror...]`);
       }
     }
 
@@ -186,6 +204,10 @@ async function runCode(code, packages) {
     }
     postMessage({ type: 'error', message: traceback, traceback });
   } finally {
+    // Flush any buffered output (e.g. print without trailing newline)
+    try {
+      await py.runPython('sys.stdout.flush(); sys.stderr.flush()');
+    } catch {}
     postMessage({ type: 'status', state: 'ready' });
     postMessage({ type: 'done' });
   }
