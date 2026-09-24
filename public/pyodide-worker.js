@@ -22,6 +22,7 @@ const CDN_BASES = [
 let pyodide = null;
 let pyodideLoadingPromise = null;
 let activeCdnBase = CDN_BASES[0];
+let pyodideScriptLoaded = false;
 
 const BUILTIN_PACKAGES = new Set([
   'numpy',
@@ -42,39 +43,42 @@ function report(text) {
   postMessage({ type: 'output', stream: 'stdout', text: text + '\n' });
 }
 
-async function tryLoadFromBase(base) {
-  importScripts(`${base}pyodide.js`);
-  const py = await globalThis.loadPyodide({ indexURL: base });
-
-  // Redirect stdout/stderr from inside Python. pyodide.setStdout({batched})
-  // proved unreliable in this environment; a JsProxy writer works across
-  // Pyodide builds and flushes line-by-line to the main thread.
+// Install Python-level stdout/stderr writers that post straight to the main
+// thread. pyodide's package loader replaces sys.stdout with a TextIOWrapper
+// after load, so this MUST be re-applied before every run — not just once.
+function installWriters(py) {
   py.globals.set('_js_stdout', (s) => {
     if (s) postMessage({ type: 'output', stream: 'stdout', text: s });
   });
   py.globals.set('_js_stderr', (s) => {
     if (s) postMessage({ type: 'output', stream: 'stderr', text: s });
   });
-  await py.runPython(`
-import sys
+  py.runPython(`
+import sys, io
 
-class _JSWriter:
+class _JSWriter(io.TextIOBase):
     def __init__(self, cb):
         self._cb = cb
-        self._buf = []
     def write(self, s):
-        self._buf.append(s)
-        if '\n' in s:
-            self.flush()
+        if s:
+            self._cb(s)
+        return len(s)
     def flush(self):
-        out = ''.join(self._buf)
-        self._buf = []
-        if out:
-            self._cb(out)
+        pass
+    def isatty(self):
+        return False
 
 sys.stdout = _JSWriter(_js_stdout)
 sys.stderr = _JSWriter(_js_stderr)
 `);
+}
+
+async function tryLoadFromBase(base) {
+  if (!pyodideScriptLoaded) {
+    importScripts(`${base}pyodide.js`);
+    pyodideScriptLoaded = true;
+  }
+  const py = await globalThis.loadPyodide({ indexURL: base });
   return py;
 }
 
@@ -97,6 +101,9 @@ async function loadPyodide() {
         } catch (e) {
           console.warn('micropip pre-load warning:', e);
         }
+
+        // Install writers AFTER package loading (it resets sys.stdout)
+        installWriters(py);
 
         postMessage({ type: 'status', state: 'ready' });
         pyodide = py;
@@ -182,6 +189,9 @@ async function runCode(code, packages) {
   if (packages && packages.length > 0) {
     await ensurePackages(packages);
   }
+
+  // Package loading resets sys.stdout — always re-apply the writers
+  installWriters(py);
 
   // Set up figure capture if matplotlib is present
   await setupMatplotlib(py);
