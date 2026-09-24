@@ -54,17 +54,22 @@ function installWriters(py) {
     if (s) postMessage({ type: 'output', stream: 'stderr', text: s });
   });
   py.runPython(`
-import sys, io
+import sys
 
-class _JSWriter(io.TextIOBase):
+class _JSWriter:
     def __init__(self, cb):
         self._cb = cb
+        self._buf = []
     def write(self, s):
-        if s:
-            self._cb(s)
+        self._buf.append(s)
+        if '\n' in s:
+            self.flush()
         return len(s)
     def flush(self):
-        pass
+        out = ''.join(self._buf)
+        self._buf = []
+        if out:
+            self._cb(out)
     def isatty(self):
         return False
 
