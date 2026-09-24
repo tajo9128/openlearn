@@ -115,7 +115,6 @@ async function loadPyodide() {
         return py;
       } catch (err) {
         lastErr = err;
-        report(`[Python runtime source ${new URL(base).host} failed — trying next mirror...]`);
       }
     }
 
