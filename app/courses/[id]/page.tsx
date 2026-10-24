@@ -103,10 +103,10 @@ export default function CourseDetailPage() {
                   <BookOpen className="w-4 h-4" /> {modules.length} modules
                 </span>
                 <span className="flex items-center gap-1">
-                  <Clock className="w-4 h-4" /> {course.duration_hours ?? '\u2014'} hours
+                  <Clock className="w-4 h-4" /> {totalLessons} lessons
                 </span>
                 <span className="flex items-center gap-1">
-                  <Users className="w-4 h-4" /> {course.instructor_name}
+                  <Users className="w-4 h-4" /> BioDockify AI
                 </span>
               </div>
             </div>
@@ -137,7 +137,9 @@ export default function CourseDetailPage() {
                   onClick={handleEnroll}
                   className="w-full px-6 py-3 bg-white text-emerald-700 rounded-lg font-semibold hover:bg-emerald-50 transition-colors"
                 >
-                  {course.is_free ? 'Enroll for Free' : `Enroll \u2014 $${course.price}`}
+                  {course.is_free === false && course.price != null
+                    ? `Enroll — $${course.price}`
+                    : 'Enroll for Free'}
                 </button>
               )}
             </div>
@@ -204,7 +206,7 @@ export default function CourseDetailPage() {
                                 {lesson.title}
                               </span>
                               <span className="ml-auto text-xs text-neutral-400">
-                                {lesson.duration_minutes}m
+                                {lesson.duration_minutes ? `${lesson.duration_minutes}m` : 'Video'}
                               </span>
                             </Link>
                           );
