@@ -1,0 +1,42 @@
+ALTER TABLE learning_github_repos ADD COLUMN IF NOT EXISTS readme_content text;
+
+INSERT INTO learning_github_repos (repo, full_name, owner, url, description, language, topics, stars, forks, category, is_featured) VALUES
+('cpython', 'python/cpython', 'python', 'https://github.com/python/cpython', 'The Python programming language — official source code', 'Python', '["python","core"]', 62000, 28000, 'python-courses', true),
+('learn-python', 'trekhleb/learn-python', 'trekhleb', 'https://github.com/trekhleb/learn-python', 'Playground and cheatsheet for learning Python — collection of Python scripts grouped by topic', 'Python', '["learning","cheatsheet"]', 15000, 3600, 'python-courses', true),
+('python-100-days', 'jackfrued/Python-100-Days', 'jackfrued', 'https://github.com/jackfrued/Python-100-Days', 'Python — 100 days from novice to master', 'Python', '["tutorial","100days"]', 160000, 52000, 'python-courses', true),
+('full-speed-python', 'joaoventura/full-speed-python', 'joaoventura', 'https://github.com/joaoventura/full-speed-python', 'Full Speed Python — a lab-based Python course', 'Python', '["course","exercises"]', 4200, 700, 'python-courses', false),
+('tech-interview-handbook', 'yangshun/tech-interview-handbook', 'yangshun', 'https://github.com/yangshun/tech-interview-handbook', 'Curated interview preparation materials — includes strong Python sections', 'Python', '["interview","algorithms"]', 120000, 30000, 'practice', true),
+('exercism-python', 'exercism/python', 'exercism', 'https://github.com/exercism/python', 'Exercism Python track — community-driven practice exercises', 'Python', '["practice","exercises"]', 2200, 900, 'practice', true),
+('project-based-learning', 'practical-tutorials/project-based-learning', 'practical-tutorials', 'https://github.com/practical-tutorials/project-based-learning', 'Project-based tutorials — build real apps in Python', 'Python', '["projects","tutorial"]', 85000, 11000, 'practice', true),
+('pandas', 'pandas-dev/pandas', 'pandas-dev', 'https://github.com/pandas-dev/pandas', 'Flexible and powerful data analysis library for Python', 'Python', '["data-analysis","dataframes"]', 44000, 18000, 'data-science', true),
+('numpy', 'numpy/numpy', 'numpy', 'https://github.com/numpy/numpy', 'The fundamental package for scientific computing with Python', 'Python', '["arrays","scientific"]', 28000, 10000, 'data-science', true),
+('matplotlib', 'matplotlib/matplotlib', 'matplotlib', 'https://github.com/matplotlib/matplotlib', 'Plotting library for Python and NumPy', 'Python', '["plotting","visualization"]', 20000, 8000, 'data-science', false),
+('kaggle-environments', 'Kaggle/kaggle-environments', 'Kaggle', 'https://github.com/Kaggle/kaggle-environments', 'Kaggle learning environments — hands-on data science practice', 'Python', '["kaggle","competitions"]', 1800, 700, 'data-science', false),
+('scikit-learn', 'scikit-learn/scikit-learn', 'scikit-learn', 'https://github.com/scikit-learn/scikit-learn', 'Machine learning in Python — classification, regression, clustering', 'Python', '["ml","classification"]', 60000, 27000, 'machine-learning', true),
+('handson-ml3', 'ageron/handson-ml3', 'ageron', 'https://github.com/ageron/handson-ml3', 'Hands-On Machine Learning with Scikit-Learn, Keras and TensorFlow — notebooks', 'Jupyter', '["ml","notebooks"]', 32000, 15000, 'machine-learning', true),
+('mlcourse-ai', 'Yorko/mlcourse.ai', 'Yorko', 'https://github.com/Yorko/mlcourse.ai', 'Open Machine Learning Course', 'Jupyter', '["ml","course"]', 10000, 6000, 'machine-learning', false),
+('pytorch', 'pytorch/pytorch', 'pytorch', 'https://github.com/pytorch/pytorch', 'Tensors and dynamic neural networks with strong GPU acceleration', 'Python', '["deep-learning","tensors"]', 82000, 22000, 'machine-learning', true),
+('transformers', 'huggingface/transformers', 'huggingface', 'https://github.com/huggingface/transformers', 'State-of-the-art Machine Learning for PyTorch, TensorFlow and JAX', 'Python', '["nlp","llm","transformers"]', 130000, 26000, 'ai-llm', true),
+('langchain', 'langchain-ai/langchain', 'langchain-ai', 'https://github.com/langchain-ai/langchain', 'Building applications with LLMs through composability', 'Python', '["llm","agents","rag"]', 90000, 14000, 'ai-llm', true),
+('gpt4all', 'nomic-ai/gpt4all', 'nomic-ai', 'https://github.com/nomic-ai/gpt4all', 'Local LLM chatbot powered by GPT4All', 'Python', '["llm","local"]', 72000, 8000, 'ai-llm', false),
+('autogen', 'microsoft/autogen', 'microsoft', 'https://github.com/microsoft/autogen', 'Multi-agent conversation framework for LLM applications', 'Python', '["agents","multi-agent"]', 38000, 5000, 'ai-llm', true),
+('biopython', 'biopython/biopython', 'biopython', 'https://github.com/biopython/biopython', 'Biopython — tools for computational molecular biology', 'Python', '["bioinformatics","genomics"]', 4500, 1800, 'bioinformatics', true),
+('scanpy', 'scverse/scanpy', 'scverse', 'https://github.com/scverse/scanpy', 'Single-cell RNA-seq analysis in Python', 'Python', '["single-cell","scrna"]', 1900, 700, 'bioinformatics', true),
+('rdkit', 'rdkit/rdkit', 'rdkit', 'https://github.com/rdkit/rdkit', 'RDKit — cheminformatics and machine learning toolkit', 'C++', '["chemistry","drug-discovery"]', 3200, 1100, 'bioinformatics', true),
+('biopython-tutorial', 'biopython/biopython-tutorial', 'biopython', 'https://github.com/biopython/biopython-tutorial', 'Official Biopython tutorial and cookbook', 'Python', '["tutorial","bioinformatics"]', 600, 300, 'bioinformatics', false),
+('fastapi', 'fastapi/fastapi', 'fastapi', 'https://github.com/fastapi/fastapi', 'Modern, fast web framework for building APIs with Python', 'Python', '["api","web","async"]', 76000, 6000, 'web-dev', true),
+('flask', 'pallets/flask', 'pallets', 'https://github.com/pallets/flask', 'The Python micro framework for building web applications', 'Python', '["web","micro"]', 68000, 16000, 'web-dev', false),
+('django', 'django/django', 'django', 'https://github.com/django/django', 'The web framework for perfectionists with deadlines', 'Python', '["web","fullstack"]', 80000, 31000, 'web-dev', false),
+('requests', 'psf/requests', 'psf', 'https://github.com/psf/requests', 'A simple, elegant HTTP library for Python', 'Python', '["http","api"]', 52000, 9500, 'web-dev', false),
+('python-scripts', 'realpython/python-scripts', 'realpython', 'https://github.com/realpython/python-scripts', 'Curated collection of Python automation scripts', 'Python', '["automation","scripts"]', 1200, 500, 'automation', false),
+('selenium', 'SeleniumHQ/selenium', 'SeleniumHQ', 'https://github.com/SeleniumHQ/selenium', 'Browser automation framework — Selenium with Python bindings', 'Java', '["selenium","browser"]', 30000, 7500, 'automation', true),
+('openpyxl', 'python-openpyxl/openpyxl', 'python-openpyxl', 'https://github.com/python-openpyxl/openpyxl', 'Read/write Excel xlsx files with Python', 'Python', '["excel","office"]', 2400, 500, 'automation', false),
+('pysimplegui', 'PySimpleGUI/PySimpleGUI', 'PySimpleGUI', 'https://github.com/PySimpleGUI/PySimpleGUI', 'Python GUIs for humans — launch windows in one line', 'Python', '["gui","desktop"]', 14000, 2000, 'gui-dev', true),
+('tkinter-by-example', 'Dvlv/Tkinter-By-Example', 'Dvlv', 'https://github.com/Dvlv/Tkinter-By-Example', 'Learn Tkinter by example — full GUI apps', 'Python', '["gui","tkinter"]', 900, 400, 'gui-dev', false),
+('kivy', 'kivy/kivy', 'kivy', 'https://github.com/kivy/kivy', 'Cross-platform Python framework for GUI and mobile apps', 'Python', '["gui","mobile"]', 17000, 3500, 'gui-dev', false),
+('awesome-python', 'vinta/awesome-python', 'vinta', 'https://github.com/vinta/awesome-python', 'A curated list of awesome Python frameworks, libraries, software and resources', 'Python', '["awesome","resources"]', 210000, 46000, 'resources', true),
+('python-cheatsheet', 'gto76/python-cheatsheet', 'gto76', 'https://github.com/gto76/python-cheatsheet', 'Comprehensive Python cheatsheet', 'Python', '["cheatsheet","reference"]', 36000, 5000, 'resources', true),
+('free-programming-books', 'EbookFoundation/free-programming-books', 'EbookFoundation', 'https://github.com/EbookFoundation/free-programming-books', 'Freely available programming books — extensive Python section', 'HTML', '["books","free"]', 330000, 62000, 'resources', true)
+ON CONFLICT (repo) DO NOTHING;
+
+SELECT count(*) AS seeded FROM learning_github_repos;

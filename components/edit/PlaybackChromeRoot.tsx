@@ -1239,7 +1239,12 @@ export const PlaybackChromeRoot = forwardRef<PlaybackChromeRootHandle, PlaybackC
       if (currentIndex < scenes.length - 1) {
         void gatedSceneSwitch(scenes[currentIndex + 1].id);
       } else if (canAdvanceToPendingSlot) {
-        // On last real scene → advance to pending slot (generating or completion page)
+        // On last real scene → advance to pending slot (generating or completion page).
+        // Also record lesson completion (works without auto-play enabled).
+        const stageId = useStageStore.getState().stage?.id;
+        if (stageId && currentIndex === scenes.length - 1) {
+          void markLessonCompletedFromPlayer(stageId);
+        }
         void gatedSceneSwitch(PENDING_SCENE_ID);
       }
     }, [currentSceneId, gatedSceneSwitch, canAdvanceToPendingSlot, isPendingScene, scenes]);

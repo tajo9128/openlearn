@@ -37,6 +37,32 @@ export async function POST(request: NextRequest) {
       return apiError(API_ERROR_CODES.UPSTREAM_ERROR, 500, 'Failed to enroll', error);
     }
 
+    // Send enrollment email to registered users (never blocks the API)
+    void (async () => {
+      try {
+        const { lookupUser } = await import('@/lib/learning/issue-certificate');
+        const user = await lookupUser(user_id);
+        if (!user.email) return;
+        const { data: course } = await supabaseQuerySingle(TABLES.COURSES, {
+          filters: { id: `eq.${course_id}` },
+        });
+        const { sendEmail } = await import('@/lib/learning/email');
+        const origin = process.env.NEXT_PUBLIC_APP_URL || 'https://learn.biodockify.com';
+        await sendEmail('courseEnrollment', {
+          to: user.email,
+          fields: {
+            studentName: user.name ?? 'Student',
+            courseName: (course as any)?.title ?? 'your course',
+            courseDescription: (course as any)?.description ?? '',
+            courseUrl: `${origin}/courses/${course_id}`,
+          },
+        });
+        log.info(`Enrollment email sent to ${user.email}`);
+      } catch (e) {
+        log.warn('Enrollment email failed:', e);
+      }
+    })();
+
     return apiSuccess({ enrollment: data }, 201);
   } catch (error) {
     log.error('Enrollment failed:', error);

@@ -1,13 +1,17 @@
 import { type NextRequest } from 'next/server';
 import { apiSuccess, apiError, API_ERROR_CODES } from '@/lib/server/api-response';
-import { supabaseQuery, supabaseUpsert, TABLES } from '@/lib/learning/supabase-client';
+import { supabaseQuery, supabaseQuerySingle, supabaseUpsert, TABLES } from '@/lib/learning/supabase-client';
+import { issueCertificateIfEligible, lookupUser } from '@/lib/learning/issue-certificate';
 import { createLogger } from '@/lib/logger';
 
 const log = createLogger('Learning Progress API');
 
 /**
  * POST /api/learning/progress
- * Update lesson progress (upsert = create or update)
+ * Update lesson progress (upsert = create or update).
+ * Completed lessons are never downgraded to in_progress.
+ * When a course reaches 100%, a certificate is auto-issued and a
+ * congratulations email is sent (registered users).
  */
 export async function POST(request: NextRequest) {
   try {
@@ -17,17 +21,30 @@ export async function POST(request: NextRequest) {
       return apiError(API_ERROR_CODES.MISSING_REQUIRED_FIELD, 400, 'Missing user_id, lesson_id, or course_id');
     }
 
+    const incoming = status ?? 'in_progress';
+
+    // Guard: never downgrade a completed lesson back to in_progress
+    let effectiveStatus = incoming;
+    const { data: existing } = await supabaseQuerySingle(TABLES.PROGRESS, {
+      filters: { user_id: `eq.${user_id}`, lesson_id: `eq.${lesson_id}` },
+    });
+    if (existing && (existing as any).status === 'completed' && incoming === 'in_progress') {
+      effectiveStatus = 'completed'; // keep the achievement
+    }
+
     const row: Record<string, unknown> = {
       user_id,
       lesson_id,
       course_id,
-      status: status ?? 'in_progress',
+      status: effectiveStatus,
     };
 
     if (score !== undefined) row.score = score;
     if (time_spent_seconds) row.time_spent_seconds = time_spent_seconds;
-    if (status === 'in_progress') row.started_at = new Date().toISOString();
-    if (status === 'completed') row.completed_at = new Date().toISOString();
+    if (effectiveStatus === 'in_progress' && !existing) row.started_at = new Date().toISOString();
+    if (effectiveStatus === 'completed' && !(existing as any)?.completed_at) {
+      row.completed_at = new Date().toISOString();
+    }
 
     const { data, error } = await supabaseUpsert(TABLES.PROGRESS, row, 'user_id,lesson_id');
 
@@ -36,7 +53,41 @@ export async function POST(request: NextRequest) {
       return apiError(API_ERROR_CODES.UPSTREAM_ERROR, 500, 'Failed to update progress', error);
     }
 
-    return apiSuccess({ progress: data });
+    // Auto-certificate check on completion
+    let certificateIssued = false;
+    if (effectiveStatus === 'completed') {
+      try {
+        const result = await issueCertificateIfEligible(user_id, course_id);
+        if (result && !result.alreadyIssued) {
+          certificateIssued = true;
+
+          // Send congratulations email for registered users
+          const cert = result.certificate as any;
+          const user = await lookupUser(user_id);
+          if (user.email) {
+            const { data: course } = await supabaseQuerySingle(TABLES.COURSES, {
+              filters: { id: `eq.${course_id}` },
+            });
+            const { sendEmail } = await import('@/lib/learning/email');
+            const origin = process.env.NEXT_PUBLIC_APP_URL || 'https://learn.biodockify.com';
+            await sendEmail('courseCompletion', {
+              to: user.email,
+              fields: {
+                studentName: user.name ?? 'Student',
+                courseName: (course as any)?.title ?? 'your course',
+                certificateUrl: `${origin}/certificates/${cert.id}`,
+              },
+            });
+            log.info(`Completion email sent to ${user.email}`);
+          }
+        }
+      } catch (certErr) {
+        // Certificate/email failure must not break progress recording
+        log.warn('Auto-certificate check failed:', certErr);
+      }
+    }
+
+    return apiSuccess({ progress: data, certificate_issued: certificateIssued });
   } catch (error) {
     log.error('Progress update failed:', error);
     return apiError(

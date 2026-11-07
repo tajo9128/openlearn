@@ -1,0 +1,14 @@
+[Unit]
+Description=Local auth shim (GoTrue-compatible) for learn.biodockify.com
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 -u /opt/openlearn/localdb/auth_shim.py
+Restart=always
+RestartSec=5
+Environment=LOCALDB_DSN=postgres://learn:IucXuQWv2_8tDOT9tUpVkmU9@127.0.0.1:5434/learn
+
+[Install]
+WantedBy=multi-user.target

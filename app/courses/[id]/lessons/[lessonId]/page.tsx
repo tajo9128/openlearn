@@ -10,6 +10,7 @@ import {
   Play, Sparkles, Loader2, Download, Eye, FlaskConical, AlertCircle,
 } from 'lucide-react';
 import { getCompletionStatus, attemptAutoComplete, WatchTimer } from '@/lib/learning/auto-complete';
+import { recordStreakActivity } from '@/lib/learning/streaks';
 
 export default function LessonPage() {
   const { id, lessonId } = useParams();
@@ -33,6 +34,11 @@ export default function LessonPage() {
   const timerRef = useRef<WatchTimer | null>(null);
 
   const userId = getUserId();
+
+  // Count this visit toward the learner's daily streak
+  useEffect(() => {
+    recordStreakActivity();
+  }, []);
 
   // Fetch lesson + course data
   useEffect(() => {
@@ -75,6 +81,19 @@ export default function LessonPage() {
         false, // hasExercises checked separately
       );
       setCompletionStatus(status);
+
+      // Wire the auto-complete: fire once when the threshold is met
+      if (status.canComplete && status.watchComplete) {
+        attemptAutoComplete(
+          lessonId as string,
+          id as string,
+          userId,
+          lesson.duration_minutes ?? 15,
+          false,
+        ).then((ok) => {
+          if (ok) setCompletionStatus((prev: any) => ({ ...prev, canComplete: true }));
+        });
+      }
     });
     timerRef.current = timer;
     timer.start();
@@ -88,7 +107,7 @@ export default function LessonPage() {
     setCompletionStatus(status);
 
     return () => timer.stop();
-  }, [lesson, lessonId]);
+  }, [lesson, lessonId, id, userId]);
 
   const allLessons = modules.flatMap((m: any) => m.lessons ?? []);
   const currentIndex = allLessons.findIndex((l: any) => l.id === lessonId);

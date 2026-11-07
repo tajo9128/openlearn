@@ -1,0 +1,77 @@
+name: openlearn-localdb
+
+# Local database stack for learn.biodockify.com — replaces Supabase after
+# the free-tier egress quota was exceeded. Fully separate from the main
+# biodockify-postgres container (different volume, port, and credentials).
+#
+#   postgres   : postgres:16-alpine     (127.0.0.1:5434 on host)
+#   postgrest  : serves /rest/v1-compatible API (same engine Supabase uses)
+#   auth       : GoTrue-compatible shim (bcrypt + opaque session tokens)
+#   gateway    : nginx bridging /rest/v1 -> postgrest, /auth/v1 -> auth
+#                (127.0.0.1:8768 on host, openlearn-db-gateway:80 on the
+#                 openlearn_default network for the app container)
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: openlearn-postgres
+    environment:
+      POSTGRES_USER: learn
+      POSTGRES_PASSWORD: IucXuQWv2_8tDOT9tUpVkmU9
+      POSTGRES_DB: learn
+    ports:
+      - "127.0.0.1:5434:5432"
+    volumes:
+      - openlearn_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U learn -d learn"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  postgrest:
+    image: postgrest/postgrest:v12.2.3
+    container_name: openlearn-postgrest
+    environment:
+      PGRST_DB_URI: postgres://learn:IucXuQWv2_8tDOT9tUpVkmU9@postgres:5432/learn
+      PGRST_DB_SCHEMAS: public
+      PGRST_DB_ANON_ROLE: learn_anon
+      PGRST_JWT_SECRET: local-gateway-dummy-secret-not-used-for-auth
+      PGRST_DB_POOL: "10"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  auth:
+    build: ./auth
+    container_name: openlearn-auth
+    environment:
+      LOCALDB_DSN: postgres://learn:IucXuQWv2_8tDOT9tUpVkmU9@postgres:5432/learn
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  gateway:
+    image: nginx:alpine
+    container_name: openlearn-db-gateway
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    ports:
+      - "127.0.0.1:8768:80"
+    networks:
+      - default
+      - openlearn_default
+    depends_on:
+      - postgrest
+      - auth
+    restart: unless-stopped
+
+volumes:
+  openlearn_pgdata:
+
+networks:
+  openlearn_default:
+    external: true
