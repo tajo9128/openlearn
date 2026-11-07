@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BookOpen, LayoutDashboard, Database, Github, Home, Shield, Users, Brain, FlaskConical, LogIn, UserPlus, LogOut } from 'lucide-react';
+import { BookOpen, LayoutDashboard, Database, Github, Home, Shield, Users, Brain, LogIn, UserPlus, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const NAV_ITEMS = [
@@ -11,7 +11,6 @@ const NAV_ITEMS = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/brain', label: 'Brain', icon: Brain },
   { href: '/courses', label: 'Courses', icon: BookOpen },
-  { href: '/workspace', label: 'Workspace', icon: FlaskConical },
   { href: '/cohorts', label: 'Cohorts', icon: Users },
   { href: '/knowledge', label: 'Knowledge', icon: Database },
   { href: '/github', label: 'GitHub', icon: Github },
