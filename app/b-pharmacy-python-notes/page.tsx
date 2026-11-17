@@ -58,6 +58,7 @@ const UNITS = [
       'Break, continue and pass statements',
     ],
     pdf: '/notes/unit-1-python-for-pharmacists.pdf',
+    docx: '/notes/unit-1-python-for-pharmacists.docx',
   },
   {
     n: 2,
@@ -74,6 +75,7 @@ const UNITS = [
       'String formatting and pharmaceutical text processing examples',
     ],
     pdf: '/notes/unit-2-python-for-pharmacists.pdf',
+    docx: '/notes/unit-2-python-for-pharmacists.docx',
   },
   {
     n: 3,
@@ -89,6 +91,7 @@ const UNITS = [
       'Pharmaceutical examples: storing drug inventories and dosage data',
     ],
     pdf: '/notes/unit-3-python-for-pharmacists.pdf',
+    docx: '/notes/unit-3-python-for-pharmacists.docx',
   },
   {
     n: 4,
@@ -104,6 +107,7 @@ const UNITS = [
       'Best practices for processing laboratory and clinical data',
     ],
     pdf: '/notes/unit-4-python-for-pharmacists.pdf',
+    docx: '/notes/unit-4-python-for-pharmacists.docx',
   },
   {
     n: 5,
@@ -119,6 +123,7 @@ const UNITS = [
       'Mini case studies: pharmaceutical data analysis workflows',
     ],
     pdf: '/notes/unit-5-python-for-pharmacists.pdf',
+    docx: '/notes/unit-5-python-for-pharmacists.docx',
   },
 ];
 
@@ -168,8 +173,8 @@ const FAQS = [
 function UnitCard({ unit }: { unit: (typeof UNITS)[number] }) {
   return (
     <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 overflow-hidden hover:border-emerald-300 dark:hover:border-emerald-700 transition-colors">
-      <div className="p-6 flex items-start justify-between gap-4">
-        <div className="flex items-start gap-4">
+      <div className="p-6 flex flex-col md:flex-row md:items-start justify-between gap-4">
+        <div className="flex items-start gap-4 flex-1 min-w-0">
           <div className="w-12 h-12 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 font-bold text-xl flex items-center justify-center flex-shrink-0">
             {unit.n}
           </div>
@@ -180,13 +185,22 @@ function UnitCard({ unit }: { unit: (typeof UNITS)[number] }) {
             <p className="text-sm text-neutral-500 mt-1">{unit.keywords}</p>
           </div>
         </div>
-        <a
-          href={unit.pdf}
-          download
-          className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors text-sm font-semibold whitespace-nowrap flex-shrink-0"
-        >
-          <Download className="w-4 h-4" /> PDF
-        </a>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <a
+            href={unit.pdf}
+            download={`BioDockify-Unit${unit.n}-Python-for-Pharmacists.pdf`}
+            className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors text-sm font-semibold whitespace-nowrap"
+          >
+            <Download className="w-4 h-4" /> PDF
+          </a>
+          <a
+            href={unit.docx}
+            download={`BioDockify-Unit${unit.n}-Python-for-Pharmacists.docx`}
+            className="inline-flex items-center gap-1.5 px-4 py-2 border border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-950/30 transition-colors text-sm font-semibold whitespace-nowrap"
+          >
+            <FileText className="w-4 h-4" /> DOCX
+          </a>
+        </div>
       </div>
       <details className="border-t border-neutral-100 dark:border-neutral-800 group">
         <summary className="px-6 py-3 text-sm font-medium text-emerald-700 dark:text-emerald-300 cursor-pointer list-none flex items-center gap-2">
