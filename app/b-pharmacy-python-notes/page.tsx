@@ -8,7 +8,7 @@ import {
 export const metadata: Metadata = {
   title: 'B Pharmacy Python Notes PDF Free Download | BP-101T Complete Book (All 5 Units)',
   description:
-    'Free B.Pharmacy Python notes PDF download (BP-101T) — PCI syllabus, all 5 units. Python for Pharmaceutical Sciences complete book free PDF + DOCX. Notes by Dr. Tajuddin. Get the free Python book for B.Pharm 1st semester.',
+    'Free B.Pharmacy Python notes PDF download (BP-101T) — PCI syllabus, all 5 units. Python for Pharmaceutical Sciences complete book free PDF. Notes by Dr. Tajuddin. Get the free Python book for B.Pharm 1st semester.',
   keywords: [
     'b pharmacy python notes',
     'b pharm python notes pdf',
@@ -58,7 +58,6 @@ const UNITS = [
       'Break, continue and pass statements',
     ],
     pdf: '/notes/unit-1-python-for-pharmacists.pdf',
-    docx: '/notes/unit-1-python-for-pharmacists.docx',
   },
   {
     n: 2,
@@ -75,7 +74,6 @@ const UNITS = [
       'String formatting and pharmaceutical text processing examples',
     ],
     pdf: '/notes/unit-2-python-for-pharmacists.pdf',
-    docx: '/notes/unit-2-python-for-pharmacists.docx',
   },
   {
     n: 3,
@@ -91,7 +89,6 @@ const UNITS = [
       'Pharmaceutical examples: storing drug inventories and dosage data',
     ],
     pdf: '/notes/unit-3-python-for-pharmacists.pdf',
-    docx: '/notes/unit-3-python-for-pharmacists.docx',
   },
   {
     n: 4,
@@ -107,7 +104,6 @@ const UNITS = [
       'Best practices for processing laboratory and clinical data',
     ],
     pdf: '/notes/unit-4-python-for-pharmacists.pdf',
-    docx: '/notes/unit-4-python-for-pharmacists.docx',
   },
   {
     n: 5,
@@ -123,7 +119,6 @@ const UNITS = [
       'Mini case studies: pharmaceutical data analysis workflows',
     ],
     pdf: '/notes/unit-5-python-for-pharmacists.pdf',
-    docx: '/notes/unit-5-python-for-pharmacists.docx',
   },
 ];
 
@@ -138,7 +133,7 @@ const FAQS = [
   },
   {
     q: 'Is the Python for Pharmacists book free to download?',
-    a: 'Yes. The complete Python for Pharmacists book (all 5 units, revised edition) is 100% free to download from learn.biodockify.com in both PDF and DOCX formats. It also includes a free interactive video course with AI narration.',
+    a: 'Yes. The complete Python for Pharmacists book (all 5 units, revised edition) is 100% free to download from learn.biodockify.com in PDF format. It also includes a free interactive video course with AI narration.',
   },
   {
     q: 'How many units are in B Pharmacy Python (BP-101T)?',
@@ -159,10 +154,6 @@ const FAQS = [
   {
     q: 'Do I need prior coding experience for B Pharmacy Python?',
     a: 'No prior coding experience is needed. BP-101T starts from absolute basics in Unit 1 and progresses step by step. These notes explain every concept with pharmacy-specific examples so B.Pharm students can learn Python alongside their regular coursework.',
-  },
-  {
-    q: 'Can I get these Python notes in DOCX (editable) format?',
-    a: 'Yes — every unit and the complete book are available in both PDF (for reading/printing) and DOCX (editable) formats, completely free. Click any download button on this page.',
   },
   {
     q: 'Is there a video course for B Pharmacy Python?',
@@ -191,14 +182,7 @@ function UnitCard({ unit }: { unit: (typeof UNITS)[number] }) {
             download={`BioDockify-Unit${unit.n}-Python-for-Pharmacists.pdf`}
             className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors text-sm font-semibold whitespace-nowrap"
           >
-            <Download className="w-4 h-4" /> PDF
-          </a>
-          <a
-            href={unit.docx}
-            download={`BioDockify-Unit${unit.n}-Python-for-Pharmacists.docx`}
-            className="inline-flex items-center gap-1.5 px-4 py-2 border border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-950/30 transition-colors text-sm font-semibold whitespace-nowrap"
-          >
-            <FileText className="w-4 h-4" /> DOCX
+            <Download className="w-4 h-4" /> Download PDF
           </a>
         </div>
       </div>
@@ -229,7 +213,7 @@ export default function BPharmacyPythonNotesPage() {
         '@id': 'https://learn.biodockify.com/b-pharmacy-python-notes#webpage',
         url: 'https://learn.biodockify.com/b-pharmacy-python-notes',
         name: 'B Pharmacy Python Notes PDF Free Download | BP-101T Complete Book',
-        description: 'Free BP-101T Python for Pharmaceutical Sciences notes — all 5 units PDF + DOCX download.',
+        description: 'Free BP-101T Python for Pharmaceutical Sciences notes — all 5 units free PDF download.',
         isPartOf: { '@type': 'WebSite', name: 'BioDockify Learn', url: 'https://learn.biodockify.com' },
         primaryImageOfPage: { '@type': 'ImageObject', url: 'https://learn.biodockify.com/logo-horizontal.png' },
       },
@@ -333,7 +317,7 @@ export default function BPharmacyPythonNotesPage() {
           </div>
           <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 mt-6 text-sm text-emerald-200">
             <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4" /> No signup needed</span>
-            <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4" /> PDF + DOCX</span>
+            <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4" /> High-quality PDF</span>
             <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4" /> 100% free forever</span>
             <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4" /> PCI syllabus aligned</span>
           </div>
@@ -345,7 +329,7 @@ export default function BPharmacyPythonNotesPage() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
           {[
             { icon: FileText, label: '5 Complete Units', sub: 'Full PCI syllabus' },
-            { icon: Download, label: 'Instant Download', sub: 'PDF + editable DOCX' },
+            { icon: Download, label: 'Instant Download', sub: 'Printable PDF' },
             { icon: Star, label: 'Exam-Focused', sub: 'By Dr. Tajuddin' },
             { icon: GraduationCap, label: 'Video Course', sub: 'Free interactive lessons' },
           ].map(({ icon: Icon, label, sub }) => (
@@ -391,17 +375,10 @@ export default function BPharmacyPythonNotesPage() {
             <div className="flex flex-col sm:flex-row justify-center gap-3">
               <a
                 href="/notes/python-for-pharmacists-complete-book.pdf"
-                download
-                className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-white text-emerald-700 rounded-lg font-bold hover:bg-emerald-50 transition-colors"
+                download="Python-for-Pharmacists-BP101T-Complete-Book.pdf"
+                className="inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-white text-emerald-700 rounded-lg font-bold hover:bg-emerald-50 transition-colors"
               >
-                <Download className="w-4 h-4" /> Free PDF (2.4 MB)
-              </a>
-              <a
-                href="/notes/python-for-pharmacists-complete-book.docx"
-                download
-                className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-white/15 text-white rounded-lg font-semibold hover:bg-white/25 transition-colors"
-              >
-                <FileText className="w-4 h-4" /> DOCX (editable)
+                <Download className="w-5 h-5" /> Download Free PDF (2.4 MB)
               </a>
             </div>
           </div>

@@ -12,7 +12,6 @@ const UNITS = [
     id: 1,
     title: 'Unit 1 — Introduction to Python & Pharmaceutical Applications',
     pdf: '/notes/unit-1-python-for-pharmacists.pdf',
-    docx: '/notes/unit-1-python-for-pharmacists.docx',
     topics: [
       'Python basics, installation & IDE setup',
       'Variables, data types & operators',
@@ -25,7 +24,6 @@ const UNITS = [
     id: 2,
     title: 'Unit 2 — Functions, Modules & Strings',
     pdf: '/notes/unit-2-python-for-pharmacists.pdf',
-    docx: '/notes/unit-2-python-for-pharmacists.docx',
     topics: [
       'Defining & calling functions',
       'Parameters, return values & scope',
@@ -38,7 +36,6 @@ const UNITS = [
     id: 3,
     title: 'Unit 3 — Data Structures: Lists, Tuples, Sets & Dictionaries',
     pdf: '/notes/unit-3-python-for-pharmacists.pdf',
-    docx: '/notes/unit-3-python-for-pharmacists.docx',
     topics: [
       'Lists: creation, indexing, slicing & methods',
       'Tuples & immutability',
@@ -51,7 +48,6 @@ const UNITS = [
     id: 4,
     title: 'Unit 4 — File Handling, Exceptions & Libraries',
     pdf: '/notes/unit-4-python-for-pharmacists.pdf',
-    docx: '/notes/unit-4-python-for-pharmacists.docx',
     topics: [
       'Reading & writing files (CSV, text)',
       'Exception handling (try/except)',
@@ -64,7 +60,6 @@ const UNITS = [
     id: 5,
     title: 'Unit 5 — NumPy, Pandas & Data Visualization for Pharmacy',
     pdf: '/notes/unit-5-python-for-pharmacists.pdf',
-    docx: '/notes/unit-5-python-for-pharmacists.docx',
     topics: [
       'NumPy arrays & numerical operations',
       'Pandas DataFrames for drug datasets',
@@ -77,7 +72,6 @@ const UNITS = [
 
 const COMPLETE_BOOK = {
   pdf: '/notes/python-for-pharmacists-complete-book.pdf',
-  docx: '/notes/python-for-pharmacists-complete-book.docx',
 };
 
 export default function NotesPage() {
@@ -146,14 +140,6 @@ export default function NotesPage() {
                 <Download className="w-4 h-4" />
                 Download Complete Book (PDF)
               </a>
-              <a
-                href={COMPLETE_BOOK.docx}
-                download="Python-for-Pharmacists-BP101T-Complete-Book.docx"
-                className="inline-flex items-center gap-2 px-5 py-3 bg-white/15 text-white rounded-lg hover:bg-white/25 transition-colors text-sm font-semibold whitespace-nowrap"
-              >
-                <FileText className="w-4 h-4" />
-                DOCX
-              </a>
             </div>
           </div>
         </div>
@@ -186,7 +172,7 @@ export default function NotesPage() {
                   {unit.title}
                 </h2>
                 <p className="text-sm text-neutral-500 mt-0.5">
-                  Complete notes with pharmaceutical examples &middot; PDF + editable DOCX
+                  Complete notes with pharmaceutical examples &middot; printable PDF
                 </p>
               </div>
               <div className="flex flex-wrap gap-3">
@@ -197,14 +183,6 @@ export default function NotesPage() {
                 >
                   <Download className="w-4 h-4" />
                   Download PDF
-                </a>
-                <a
-                  href={unit.docx}
-                  download={`BioDockify-Unit${unit.id}-Python-for-Pharmacists.docx`}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-200 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors text-sm font-semibold"
-                >
-                  <FileText className="w-4 h-4" />
-                  DOCX
                 </a>
                 <a
                   href={unit.pdf}
