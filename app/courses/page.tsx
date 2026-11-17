@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Search, Filter, BookOpen, Clock, Lock, Sparkles, Award, Code2, Cpu, Dna, Pill, FlaskConical, BarChart3 } from 'lucide-react';
+import { Search, Filter, BookOpen, Clock, Lock, Sparkles, Award, Code2, Cpu, Dna, Pill, FlaskConical, BarChart3, ChevronRight } from 'lucide-react';
 
 const CATEGORIES = ['all', 'pharmacy', 'medicinal-chemistry', 'python', 'ai', 'research'];
 const DIFFICULTIES = ['all', 'beginner', 'intermediate', 'advanced'];
@@ -124,9 +124,22 @@ export default function CoursesPage() {
           <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-white mb-3">
             AI-Powered Pharmaceutical Courses
           </h1>
-          <p className="text-neutral-300 max-w-2xl text-base md:text-lg mb-6 leading-relaxed">
+          <p className="text-neutral-300 max-w-2xl text-base md:text-lg mb-4 leading-relaxed">
             Learn pharmaceutical science with interactive AI-narrated video lessons — play like a movie, code in browser, and learn at your pace.
           </p>
+
+          {/* B.Pharm Notes promo */}
+          <Link
+            href="/b-pharmacy-python-notes"
+            className="inline-flex items-center gap-3 mb-6 px-4 py-2.5 rounded-xl bg-emerald-600/90 hover:bg-emerald-600 text-white transition-colors group"
+          >
+            <span className="text-xs font-mono bg-white/20 px-2 py-0.5 rounded-full">BP-101T</span>
+            <span className="text-sm font-semibold">
+              Download the free B.Pharm Python Notes book (all 5 units, PDF)
+            </span>
+            <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+          </Link>
+          <br />
 
           {/* Value props pills */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 max-w-4xl pt-2">
