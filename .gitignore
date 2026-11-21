@@ -91,3 +91,4 @@ e2e/screenshots/
 e2e/__screenshots-619/
 /.playwright-mcp/
 course_sources/
+localdb/book-repo/
