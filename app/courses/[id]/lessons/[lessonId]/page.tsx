@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { getCompletionStatus, attemptAutoComplete, WatchTimer } from '@/lib/learning/auto-complete';
 import { recordStreakActivity } from '@/lib/learning/streaks';
+import { NotesBanner } from '@/components/learning/notes-banner';
 
 export default function LessonPage() {
   const { id, lessonId } = useParams();
@@ -113,6 +114,15 @@ export default function LessonPage() {
   const currentIndex = allLessons.findIndex((l: any) => l.id === lessonId);
   const prevLesson = currentIndex > 0 ? allLessons[currentIndex - 1] : null;
   const nextLesson = currentIndex < allLessons.length - 1 ? allLessons[currentIndex + 1] : null;
+
+  // Python courses get the free-notes banner (relevant internal link)
+  const pythonCourseIds = [
+    '34749f18-9bf0-4d2f-abba-91dc43be7393', // Python Programming - Basics
+    '35749f18-9bf0-4d2f-abba-91dc43be7393', // Python for Data Science
+    'a3333333-3333-3333-3333-333333333333', // Python for Pharmaceutical Research
+    'bd127d48-37d6-4ff0-9821-acdf9abf667e', // Complete Python Bootcamp
+  ];
+  const showNotesBanner = pythonCourseIds.includes(id as string);
 
   // Generate classroom from lesson content
   const handleGenerateClassroom = async () => {
@@ -374,6 +384,13 @@ export default function LessonPage() {
             </div>
           )}
         </div>
+
+        {/* Free B.Pharm notes — internal SEO link */}
+        {showNotesBanner && (
+          <div className="mb-8">
+            <NotesBanner variant="full" />
+          </div>
+        )}
 
         {/* Practice Lab — appears after watch threshold */}
         {watchComplete && (

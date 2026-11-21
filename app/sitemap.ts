@@ -71,6 +71,23 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.8,
   }));
 
+  // Downloadable note PDFs — Google indexes PDFs as documents
+  const noteFiles: MetadataRoute.Sitemap = [
+    { url: `${BASE}/notes/python-for-pharmacists-complete-book.pdf`, changeFrequency: 'yearly', priority: 0.8 },
+    ...[1, 2, 3, 4, 5].map((n) => ({
+      url: `${BASE}/notes/unit-${n}-python-for-pharmacists.pdf`,
+      changeFrequency: 'yearly' as const,
+      priority: 0.6,
+    })),
+  ];
+
+  // Unit-wise landing pages
+  const unitLandingPages: MetadataRoute.Sitemap = [1, 2, 3, 4, 5].map((n) => ({
+    url: `${BASE}/b-pharmacy-python-notes/unit-${n}`,
+    changeFrequency: 'monthly',
+    priority: 0.8,
+  }));
+
   const lessonRows = courses.length > 1 ? await lessonsFor(courses.map((c) => c.id)) : [];
   const lessonPages: MetadataRoute.Sitemap = lessonRows.map((l) => {
     const base = l.title
@@ -85,5 +102,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     };
   });
 
-  return [...staticPages, ...coursePages, ...lessonPages];
+  return [...staticPages, ...unitLandingPages, ...noteFiles, ...coursePages, ...lessonPages];
 }
