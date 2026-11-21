@@ -20,11 +20,27 @@ const inter = localFont({
 });
 
 export const metadata: Metadata = {
-  title: 'BioDockify Learn - AI-Powered Pharmaceutical Education',
-  description: 'Master pharmaceutical research with AI-powered courses, Python coding exercises, molecular modeling, and interactive learning.',
+  title: {
+    default: 'BioDockify Learn — Free AI-Narrated Pharmacy Courses, Python Notes & Certificates',
+    template: '%s | BioDockify Learn',
+  },
+  description:
+    'Free pharmacy education platform: 21 AI-narrated video courses (molecular docking, drug discovery, pharmacology, Python for pharmacy), free B.Pharm notes PDF downloads, practice exercises and certificates.',
+  keywords: [
+    'pharmacy education platform',
+    'AI-narrated pharmacy courses',
+    'free pharmacy courses online',
+    'B pharmacy python notes',
+    'molecular docking course',
+    'drug discovery learning',
+  ],
   icons: {
     icon: [{ url: "/favicon.svg", type: "image/svg+xml" }, { url: "/favicon.ico", sizes: "any" }],
-    
+  },
+  openGraph: {
+    siteName: 'BioDockify Learn',
+    type: 'website',
+    url: 'https://learn.biodockify.com',
   },
 };
 
