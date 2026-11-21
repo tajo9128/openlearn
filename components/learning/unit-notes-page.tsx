@@ -1,13 +1,12 @@
-import type { Metadata } from 'next';
-import Link from 'next/link';
-import { Download, FileText, CheckCircle2, GraduationCap, ChevronLeft, Eye } from 'lucide-react';
-import { notFound } from 'next/navigation';
+'use client';
 
-const UNITS: Record<number, { title: string; pdf: string; syllabus: string[]; examFocus: string; slug: string }> = {
+import Link from 'next/link';
+import { Download, CheckCircle2, GraduationCap, ChevronLeft, Eye } from 'lucide-react';
+
+const UNITS: Record<number, { title: string; pdf: string; syllabus: string[]; examFocus: string }> = {
   1: {
     title: 'Introduction to Python & Pharmaceutical Applications',
     pdf: '/notes/unit-1-python-for-pharmacists.pdf',
-    slug: 'unit-1-python-notes-b-pharmacy',
     syllabus: [
       'Introduction to Python: history, features, applications in pharmacy',
       'Installation of Python and IDE (IDLE, VS Code, Jupyter)',
@@ -23,7 +22,6 @@ const UNITS: Record<number, { title: string; pdf: string; syllabus: string[]; ex
   2: {
     title: 'Functions, Modules & Strings',
     pdf: '/notes/unit-2-python-for-pharmacists.pdf',
-    slug: 'unit-2-python-notes-b-pharmacy',
     syllabus: [
       'Functions: definition, calling, parameters vs arguments',
       'Types of arguments: positional, keyword, default, variable-length',
@@ -40,7 +38,6 @@ const UNITS: Record<number, { title: string; pdf: string; syllabus: string[]; ex
   3: {
     title: 'Data Structures: Lists, Tuples, Sets & Dictionaries',
     pdf: '/notes/unit-3-python-for-pharmacists.pdf',
-    slug: 'unit-3-python-notes-b-pharmacy',
     syllabus: [
       'Lists: creation, indexing, slicing, methods (append, insert, remove, sort)',
       'List comprehensions',
@@ -56,7 +53,6 @@ const UNITS: Record<number, { title: string; pdf: string; syllabus: string[]; ex
   4: {
     title: 'File Handling, Exceptions & Libraries',
     pdf: '/notes/unit-4-python-for-pharmacists.pdf',
-    slug: 'unit-4-python-notes-b-pharmacy',
     syllabus: [
       'File handling: opening, reading, writing and closing files',
       'File modes (r, w, a) and working with CSV files',
@@ -72,7 +68,6 @@ const UNITS: Record<number, { title: string; pdf: string; syllabus: string[]; ex
   5: {
     title: 'NumPy, Pandas & Data Visualization',
     pdf: '/notes/unit-5-python-for-pharmacists.pdf',
-    slug: 'unit-5-python-notes-b-pharmacy',
     syllabus: [
       'NumPy: arrays, array creation, indexing, slicing, operations',
       'Mathematical and statistical functions in NumPy',
@@ -87,59 +82,13 @@ const UNITS: Record<number, { title: string; pdf: string; syllabus: string[]; ex
   },
 };
 
-export function generateStaticParams() {
-  return Object.keys(UNITS).map((n) => ({ unit: String(n) }));
-}
-
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ unit: string }>;
-}): Promise<Metadata> {
-  const { unit } = await params;
-  const u = UNITS[Number(unit)];
-  if (!u) return {};
-  const titles: Record<number, string> = {
-    1: 'Unit 1 Python Notes B Pharmacy PDF Free Download | BP-101T Introduction',
-    2: 'Unit 2 Python Notes B Pharmacy PDF | BP-101T Functions, Modules & Strings',
-    3: 'Unit 3 Python Notes B Pharmacy PDF | BP-101T Lists, Tuples, Dicts',
-    4: 'Unit 4 Python Notes B Pharmacy PDF | BP-101T File Handling & Exceptions',
-    5: 'Unit 5 Python Notes B Pharmacy PDF | BP-101T NumPy, Pandas & Visualization',
-  };
-  return {
-    title: titles[Number(unit)],
-    description: `Free Unit ${unit} Python notes for B.Pharm 1st semester (BP-101T PCI syllabus): ${u.title}. Download PDF with complete syllabus topics, exam focus areas and pharmaceutical examples.`,
-    alternates: { canonical: `https://learn.biodockify.com/b-pharmacy-python-notes/unit-${unit}` },
-    openGraph: {
-      title: titles[Number(unit)],
-      description: `Free BP-101T Unit ${unit} notes PDF — ${u.title}. PCI syllabus, pharmaceutical examples, exam focus included.`,
-    },
-  };
-}
-
-export default async function UnitPage({ params }: { params: Promise<{ unit: string }> }) {
-  const { unit: unitParam } = await params;
-  const n = Number(unitParam);
-  const unit = UNITS[n];
-  if (!unit) notFound();
-
-  const jsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'WebPage',
-    name: `B Pharmacy Python Unit ${n} Notes PDF — ${unit.title} (BP-101T)`,
-    description: `Free download: Unit ${n} Python notes for B.Pharm (BP-101T PCI syllabus). Complete syllabus topics, exam focus and pharmaceutical examples.`,
-    isPartOf: { '@type': 'Book', name: 'Python for Pharmacists — BP-101T Notes' },
-    isAccessibleForFree: true,
-  };
-
-  const others = Object.keys(UNITS)
-    .map(Number)
-    .filter((k) => k !== n);
+export function UnitNotesPage({ unit }: { unit: number }) {
+  const u = UNITS[unit];
+  if (!u) return null;
+  const others = Object.keys(UNITS).map(Number).filter((k) => k !== unit);
 
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-
       <div className="bg-gradient-to-r from-emerald-700 to-teal-700 text-white">
         <div className="max-w-4xl mx-auto px-4 py-10">
           <Link
@@ -150,21 +99,21 @@ export default async function UnitPage({ params }: { params: Promise<{ unit: str
           </Link>
           <span className="text-xs font-mono bg-white/20 px-2.5 py-1 rounded-full mr-2">BP-101T</span>
           <h1 className="text-2xl md:text-4xl font-bold mt-2">
-            Unit {n} Python Notes for B Pharmacy — {unit.title}
+            Unit {unit} Python Notes for B Pharmacy — {u.title}
           </h1>
           <p className="text-emerald-100 mt-2">
             Free PDF download · PCI syllabus (BP-101T) · B.Pharm 1st semester · By Dr. Tajuddin
           </p>
           <div className="flex flex-wrap gap-3 mt-6">
             <a
-              href={unit.pdf}
-              download={`BioDockify-Unit${n}-Python-for-Pharmacists.pdf`}
+              href={u.pdf}
+              download={`BioDockify-Unit${unit}-Python-for-Pharmacists.pdf`}
               className="inline-flex items-center gap-2 px-6 py-3 bg-white text-emerald-700 rounded-lg font-bold hover:bg-emerald-50 transition-colors"
             >
-              <Download className="w-5 h-5" /> Download Unit {n} Notes (Free PDF)
+              <Download className="w-5 h-5" /> Download Unit {unit} Notes (Free PDF)
             </a>
             <a
-              href={unit.pdf}
+              href={u.pdf}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 px-6 py-3 bg-white/15 rounded-lg font-semibold hover:bg-white/25 transition-colors"
@@ -178,10 +127,10 @@ export default async function UnitPage({ params }: { params: Promise<{ unit: str
       <div className="max-w-4xl mx-auto px-4 py-10">
         <section className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 p-6 mb-6">
           <h2 className="text-lg font-bold text-neutral-900 dark:text-white mb-3">
-            BP-101T Unit {n} Syllabus — {unit.title}
+            BP-101T Unit {unit} Syllabus — {u.title}
           </h2>
           <ul className="space-y-2">
-            {unit.syllabus.map((topic) => (
+            {u.syllabus.map((topic) => (
               <li key={topic} className="flex items-start gap-2.5 text-sm text-neutral-700 dark:text-neutral-300">
                 <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
                 {topic}
@@ -192,11 +141,9 @@ export default async function UnitPage({ params }: { params: Promise<{ unit: str
 
         <section className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 p-6 mb-6">
           <h2 className="text-lg font-bold text-neutral-900 dark:text-white mb-2">
-            Unit {n} Exam Focus — What B.Pharm Papers Ask
+            Unit {unit} Exam Focus — What B.Pharm Papers Ask
           </h2>
-          <p className="text-sm text-neutral-600 dark:text-neutral-300 leading-relaxed">
-            {unit.examFocus}
-          </p>
+          <p className="text-sm text-neutral-600 dark:text-neutral-300 leading-relaxed">{u.examFocus}</p>
         </section>
 
         <section className="mb-8">
@@ -232,7 +179,7 @@ export default async function UnitPage({ params }: { params: Promise<{ unit: str
               Free Video Course for BP-101T
             </h2>
             <p className="text-sm text-neutral-600 dark:text-neutral-300">
-              Learn Unit {n} interactively with AI narration, code examples and quizzes — free on BioDockify Learn
+              Learn Unit {unit} interactively with AI narration, code examples and quizzes — free on BioDockify Learn
             </p>
           </Link>
         </section>
