@@ -1,0 +1,38 @@
+[
+  {
+    "match": ["variables?", "data types", "numbers?", "basics", "intro", "casting"],
+    "title": "Worked Example: Drug Dosage Variables",
+    "code": "# Store and compute drug dosage information\ndrug_name = \"Paracetamol\"\npatient_weight_kg = 62.5      # float\nmg_per_kg = 15               # int\ntablets_in_stock = 120       # int\n\n# Calculate the dose\ndose_mg = mg_per_kg * patient_weight_kg\nprint(f\"Drug: {drug_name}\")\nprint(f\"Calculated dose: {dose_mg:.1f} mg\")\n\n# Dose check with booleans\nis_adult = True\nmax_dose = 1000 if is_adult else 500\nprint(f\"Within limit: {dose_mg <= max_dose}\")",
+    "narration": "Let's work through a pharmaceutical example. We store the drug name as a string, the patient weight in kilograms as a float, and the dose per kilogram as an integer. Multiplying them gives the total dose in milligrams. We then use a boolean to check whether the patient is an adult, and a conditional expression to set the maximum safe dose, finally verifying our calculated dose stays within the limit. This is exactly how variables and data types are used in pharmacy practice."
+  },
+  {
+    "match": ["if else", "control", "loops?", "while", "match", "for loop"],
+    "title": "Worked Example: Prescription Validation Loop",
+    "code": "# Validate a list of prescriptions\nprescriptions = [\n    {\"drug\": \"Amoxicillin\", \"dose_mg\": 500, \"max\": 2000},\n    {\"drug\": \"Ibuprofen\",  \"dose_mg\": 800, \"max\": 1200},\n    {\"drug\": \"Methotrexate\", \"dose_mg\": 25, \"max\": 20},\n]\n\nfor rx in prescriptions:\n    if rx[\"dose_mg\"] > rx[\"max\"]:\n        print(f\"REJECT {rx['drug']}: exceeds max {rx['max']}mg\")\n    elif rx[\"dose_mg\"] > 0.8 * rx[\"max\"]:\n        print(f\"REVIEW {rx['drug']}: dose near maximum\")\n    else:\n        print(f\"APPROVE {rx['drug']} at {rx['dose_mg']}mg\")",
+    "narration": "Here we loop through a list of prescriptions stored as dictionaries. For each one, an if-elif-else chain validates the dose: prescriptions exceeding the maximum are rejected, doses above eighty percent of the maximum are flagged for review, and everything else is approved. This pattern, combining loops with conditionals, mirrors real prescription screening systems used in pharmacies."
+  },
+  {
+    "match": ["functions?", "lambda", "modules?", "arguments?", "scope", "strings?"],
+    "title": "Worked Example: Creatinine Clearance Function",
+    "code": "def creatinine_clearance(age, weight_kg, serum_cr, female=False):\n    \"\"\"Cockcroft-Gault equation.\"\"\"\n    factor = 0.85 if female else 1.0\n    crcl = ((140 - age) * weight_kg * factor) / (72 * serum_cr)\n    return round(crcl, 1)\n\n# Dose adjustment based on renal function\ndef dose_for_crcl(crcl, base_mg):\n    return base_mg if crcl >= 60 else base_mg * 0.5\n\npatient1 = creatinine_clearance(65, 70, 1.2)\npatient2 = creatinine_clearance(78, 58, 1.5, female=True)\n\nprint(f\"Patient 1 CrCl: {patient1} mL/min -> dose {dose_for_crcl(patient1, 400)}mg\")\nprint(f\"Patient 2 CrCl: {patient2} mL/min -> dose {dose_for_crcl(patient2, 400)}mg\")",
+    "narration": "This example shows why functions matter in pharmacy. We implement the Cockcroft-Gault equation for creatinine clearance as a reusable function with default arguments, including a boolean flag for female patients. A second function halves the dose when kidney function is impaired. Writing clinical calculations as functions makes them testable, reusable, and safe."
+  },
+  {
+    "match": ["lists?", "tuples?", "sets?", "dictionaries?", "arrays", "data structures", "stacks", "queues"],
+    "title": "Worked Example: Drug Inventory with Dictionaries",
+    "code": "# Pharmacy inventory as a list of dictionaries\ninventory = [\n    {\"name\": \"Metformin\",    \"stock\": 450, \"reorder\": 100},\n    {\"name\": \"Atorvastatin\", \"stock\": 80,  \"reorder\": 100},\n    {\"name\": \"Omeprazole\",  \"stock\": 260, \"reorder\": 120},\n]\n\n# Find items needing reorder\nlow_stock = [d[\"name\"] for d in inventory if d[\"stock\"] < d[\"reorder\"]]\nprint(\"Reorder soon:\", low_stock)\n\n# Dictionary for fast drug lookup by code\ndrug_codes = {\"MET\": \"Metformin\", \"ATO\": \"Atorvastatin\", \"OME\": \"Omeprazole\"}\nprint(\"MET is\", drug_codes[\"MET\"])\n\n# Set of allergy drugs to check against\nallergy_set = {\"Penicillin\", \"Sulfa\", \"Aspirin\"}\nnew_rx_allergies = {\"Sulfa\", \"Latex\"}\nprint(\"Conflict detected:\", allergy_set & new_rx_allergies)",
+    "narration": "Data structures shine in pharmacy management. We store inventory as a list of dictionaries, then use a list comprehension to find drugs needing reorder. A dictionary gives instant drug lookup by code, and set intersection detects allergy conflicts between a patient's allergies and a new prescription. Each structure solves a different real problem."
+  },
+  {
+    "match": ["files?", "exceptions?", "try", "error", "json", "csv", "sqlite", "libraries?", "documentation"],
+    "title": "Worked Example: Safe Patient Data Reader",
+    "code": "import json\n\npatient_json = '{\"name\": \"Ravi Kumar\", \"age\": 54, \"meds\": [\"Metformin 500mg\"]}'\n\ntry:\n    with open(\"patient.txt\", \"w\") as f:\n        f.write(patient_json)\n    with open(\"patient.txt\") as f:\n        patient = json.load(f)\n    print(f\"Patient: {patient['name']}, age {patient['age']}\")\n    for med in patient[\"medications\"]:\n        print(f\"  - {med}\")\nexcept FileNotFoundError:\n    print(\"Error: patient file missing\")\nexcept json.JSONDecodeError as e:\n    print(f\"Error: invalid data format\")\nfinally:\n    print(\"Record processing complete\")",
+    "narration": "Reading patient files safely is a core pharmacy programming task. We write a JSON patient record to disk, then read it back inside a try block. File handling with the with statement guarantees the file closes properly, while except clauses catch a missing file or malformed data separately. The finally block always runs, confirming each record was processed. This is the pattern every clinical data script should follow."
+  },
+  {
+    "match": ["numpy", "pandas", "matplotlib", "visualization", "dataframes?", "eda", "exploratory", "data science", "data analysis", "regression", "classification", "machine learning", "clustering", "k-means", "sorting"],
+    "title": "Worked Example: Drug Elimination Curve",
+    "code": "import numpy as np\nimport matplotlib.pyplot as plt\n\n# First-order drug elimination\ndose_mg = 500\nhalf_life_h = 4.0\nhours = np.linspace(0, 24, 50)\nconc = dose_mg * np.exp(-0.693 * hours / half_life_h)\n\nprint(f\"Initial amount: {conc[0]:.1f} mg\")\nprint(f\"After 12 hours: {conc[24]:.1f} mg\")\n\n# Time above minimum therapeutic concentration (25 mg)\nmin_therapeutic = 25\nt_above = hours[conc >= min_therapeutic]\nprint(f\"Above therapeutic level for {t_above[-1]:.1f} hours\")\n\nplt.figure(figsize=(8, 4))\nplt.plot(hours, conc, 'b-', linewidth=2)\nplt.axhline(min_therapeutic, color='r', linestyle='--')\nplt.xlabel('Time (hours)')\nplt.ylabel('Drug concentration (mg)')\nplt.title('First-Order Drug Elimination')\nplt.show()",
+    "narration": "This worked example combines NumPy and Matplotlib for pharmacokinetics. We model first-order drug elimination with an exponential decay function, compute concentration at each time point, and find how long the drug stays above the minimum therapeutic concentration. Matplotlib then plots the elimination curve with the therapeutic threshold marked, producing exactly the kind of figure used in clinical pharmacology reports."
+  }
+]

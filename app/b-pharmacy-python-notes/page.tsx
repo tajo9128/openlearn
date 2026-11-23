@@ -413,15 +413,15 @@ export default function BPharmacyPythonNotesPage() {
           </h2>
           <div className="grid md:grid-cols-3 gap-4">
             <Link
-              href="/courses"
-              className="group bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-5 hover:border-emerald-300 transition-colors"
+              href="/courses/f14ecef4-baa6-4170-ad45-4783b045fb76"
+              className="group bg-white dark:bg-neutral-900 rounded-xl border border-emerald-300 dark:border-emerald-700 p-5 hover:border-emerald-400 transition-colors ring-1 ring-emerald-200"
             >
               <MousePointerClick className="w-6 h-6 text-emerald-600 mb-2" />
               <h3 className="font-semibold text-neutral-900 dark:text-white text-sm mb-1">
-                Free Python Video Course
+                BP-101T Video Course — Matches This Book
               </h3>
               <p className="text-xs text-neutral-500 mb-2">
-                44 interactive lessons with AI narration, quizzes & certificates
+                5 units · 112 interactive lessons with AI narration, pharma code examples, quizzes & certificates
               </p>
               <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-600">
                 Start free <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
