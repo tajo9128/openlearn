@@ -361,6 +361,58 @@ export default function BPharmacyPythonNotesPage() {
           </div>
         </section>
 
+        {/* Important Question Booklets */}
+        <section className="mb-12" id="important-questions">
+          <h2 className="text-2xl font-bold text-neutral-900 dark:text-white mb-2">
+            Important Questions Booklets — Exam Preparation
+          </h2>
+          <p className="text-neutral-500 mb-6">
+            Most-asked BP-101T university exam questions, compiled into free downloadable
+            booklets with model answers.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 p-6 hover:border-emerald-300 transition-colors">
+              <span className="text-[10px] font-bold bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-full uppercase">
+                With Answers
+              </span>
+              <h3 className="font-bold text-neutral-900 dark:text-white mt-3 leading-snug">
+                BP-101T Important Questions with Answers
+              </h3>
+              <p className="text-sm text-neutral-500 mt-2 mb-4">
+                Most-asked exam questions from all 5 units, with complete model answers —
+                perfect for last-minute revision.
+              </p>
+              <a
+                href="/notes/BP101T_Important_Questions_with_Answers.pdf"
+                download="BioDockify-BP101T-Important-Questions-with-Answers.pdf"
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors text-sm font-semibold"
+              >
+                <Download className="w-4 h-4" /> Download PDF (622 KB)
+              </a>
+            </div>
+
+            <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 p-6 hover:border-emerald-300 transition-colors">
+              <span className="text-[10px] font-bold bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full uppercase">
+                Part 2
+              </span>
+              <h3 className="font-bold text-neutral-900 dark:text-white mt-3 leading-snug">
+                Important Questions — NumPy, CSV, Pandas &amp; Matplotlib
+              </h3>
+              <p className="text-sm text-neutral-500 mt-2 mb-4">
+                Unit 5 focused booklet: data analysis questions asked in university exams,
+                with worked solutions.
+              </p>
+              <a
+                href="/notes/BP101T_Important_Questions_Part2_NumPy_CSV_Pandas_Matplotlib.pdf"
+                download="BioDockify-BP101T-Important-Questions-Part2.pdf"
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors text-sm font-semibold"
+              >
+                <Download className="w-4 h-4" /> Download PDF (369 KB)
+              </a>
+            </div>
+          </div>
+        </section>
+
         {/* Complete book CTA */}
         <section className="mb-12">
           <div className="bg-gradient-to-r from-emerald-600 to-teal-600 rounded-2xl p-8 text-white text-center">
