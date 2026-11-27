@@ -144,6 +144,63 @@ export default function NotesPage() {
           </div>
         </div>
 
+        {/* Important Question Booklets */}
+        <section className="mb-8">
+          <h2 className="text-xl font-bold text-neutral-900 dark:text-white mb-4 flex items-center gap-2">
+            <GraduationCap className="w-5 h-5 text-emerald-600" />
+            Important Questions Booklets — Exam Preparation
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-700 p-5 hover:border-emerald-300 transition-colors">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <span className="text-[10px] font-bold bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-full uppercase">
+                    With Answers
+                  </span>
+                  <h3 className="font-bold text-neutral-900 dark:text-white mt-2 text-sm leading-snug">
+                    BP-101T Important Questions with Answers
+                  </h3>
+                  <p className="text-xs text-neutral-500 mt-1">
+                    Most-asked exam questions from all 5 units, with complete model answers
+                  </p>
+                </div>
+              </div>
+              <a
+                href="/notes/BP101T_Important_Questions_with_Answers.pdf"
+                download="BioDockify-BP101T-Important-Questions-with-Answers.pdf"
+                className="mt-3 inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors text-xs font-semibold"
+              >
+                <Download className="w-3.5 h-3.5" />
+                Download PDF (622 KB)
+              </a>
+            </div>
+
+            <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-700 p-5 hover:border-emerald-300 transition-colors">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <span className="text-[10px] font-bold bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full uppercase">
+                    Part 2
+                  </span>
+                  <h3 className="font-bold text-neutral-900 dark:text-white mt-2 text-sm leading-snug">
+                    Important Questions — NumPy, CSV, Pandas & Matplotlib
+                  </h3>
+                  <p className="text-xs text-neutral-500 mt-1">
+                    Unit 5 focused booklet: data analysis questions asked in university exams
+                  </p>
+                </div>
+              </div>
+              <a
+                href="/notes/BP101T_Important_Questions_Part2_NumPy_CSV_Pandas_Matplotlib.pdf"
+                download="BioDockify-BP101T-Important-Questions-Part2.pdf"
+                className="mt-3 inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors text-xs font-semibold"
+              >
+                <Download className="w-3.5 h-3.5" />
+                Download PDF (369 KB)
+              </a>
+            </div>
+          </div>
+        </section>
+
         {/* Unit tabs */}
         <div className="flex flex-wrap gap-2 mb-6">
           {UNITS.map((u) => (
