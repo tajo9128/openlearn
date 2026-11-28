@@ -82,10 +82,10 @@ export default function CertificatePage() {
         <div
           className="absolute pointer-events-none"
           style={{
-            right: '-110px',
-            top: '10px',
-            width: '300px',
-            height: '300px',
+            right: '-100px',
+            top: '-45px',
+            width: '330px',
+            height: '330px',
             borderRadius: '50%',
             background: 'radial-gradient(circle at 35% 35%, #f87171 0%, #ef4444 45%, #dc2626 100%)',
             opacity: 0.9,
@@ -106,7 +106,7 @@ export default function CertificatePage() {
         {/* NVIDIA badge centered on the circle */}
         <div
           className="absolute hidden md:flex items-center justify-center bg-white border border-neutral-300 rounded-lg shadow-md overflow-hidden"
-          style={{ right: '30px', top: '75px', width: '110px', height: '138px' }}
+          style={{ right: '28px', top: '60px', width: '122px', height: '153px' }}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
