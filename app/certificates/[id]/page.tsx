@@ -6,9 +6,25 @@ import { useParams } from 'next/navigation';
 import { ShieldCheck } from 'lucide-react';
 
 const SIGNATORIES = [
-  { name: 'B K Fatheema', role: 'BioDockify – Founder', sig: 'B K Fatheema' },
-  { name: 'Mr. Tajuddin Shaik', role: 'Co-Founder & Instructor', sig: 'Tajuddin Shaik' },
-  { name: 'Dr. Mohd Afroz', role: 'Scientific Advisor & Instructor', sig: 'Mohd Afroz' },
+  {
+    name: 'B K Fatheema',
+    role: 'BioDockify – Founder',
+    sig: 'B K Fatheema',
+    sigImg: '/cert/sig-fatheema.png',
+    sigHeight: '34px',
+  },
+  {
+    name: 'Mr. Tajuddin Shaik',
+    role: 'Co-Founder & Instructor',
+    sig: 'Tajuddin Shaik',
+    sigImg: '/cert/sig-tajuddin.png',
+    sigHeight: '34px',
+  },
+  {
+    name: 'Dr. Mohd Afroz',
+    role: 'Scientific Advisor & Instructor',
+    sig: 'Mohd Afroz',
+  },
 ];
 
 export default function CertificatePage() {
@@ -115,19 +131,15 @@ export default function CertificatePage() {
             </div>
             {/* NVIDIA Inception badge */}
             <div
-              className="hidden md:flex flex-col items-center bg-white border border-neutral-300 rounded-lg px-3 py-2 shadow-sm"
-              style={{ minWidth: '130px' }}
+              className="hidden md:flex items-center justify-center bg-white border border-neutral-300 rounded-lg shadow-sm overflow-hidden"
+              style={{ width: '120px', height: '150px' }}
             >
-              <span className="text-[13px] font-bold tracking-tight">
-                <span className="text-emerald-600">N</span>
-                <span className="text-neutral-800">VIDIA</span>
-              </span>
-              <span className="text-[7px] text-neutral-500 tracking-wide">INCEPTION PROGRAM</span>
-              <span className="text-[8px] italic text-emerald-700 mt-1">Proud to be part of</span>
-              <span className="text-[9px] font-bold text-neutral-800">NVIDIA Inception Program</span>
-              <span className="text-[7px] text-neutral-500 text-center leading-tight mt-1">
-                Empowering innovators building the future with AI and accelerated computing
-              </span>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/cert/nvidia-inception.png"
+                alt="Proud to be part of NVIDIA Inception Program"
+                className="w-full h-full object-contain"
+              />
             </div>
           </div>
 
@@ -165,15 +177,25 @@ export default function CertificatePage() {
           </div>
 
           {/* Signatures */}
-          <div className="mt-auto pt-4 grid grid-cols-3 gap-6 max-w-3xl">
+          <div className="mt-auto pt-4 grid grid-cols-3 gap-6 max-w-3xl items-end">
             {SIGNATORIES.map((s) => (
               <div key={s.name} className="flex flex-col items-start">
-                <p
-                  className="text-lg md:text-2xl text-neutral-700 leading-none mb-1"
-                  style={{ fontFamily: "'Segoe Script', 'Brush Script MT', 'Dancing Script', cursive" }}
-                >
-                  {s.sig}
-                </p>
+                {s.sigImg ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={s.sigImg}
+                    alt={`${s.name} signature`}
+                    className="mb-1 object-contain mix-blend-multiply"
+                    style={{ height: s.sigHeight ?? '38px' }}
+                  />
+                ) : (
+                  <p
+                    className="text-lg md:text-2xl text-neutral-700 leading-none mb-1"
+                    style={{ fontFamily: "'Segoe Script', 'Brush Script MT', 'Dancing Script', cursive" }}
+                  >
+                    {s.sig}
+                  </p>
+                )}
                 <div className="w-full border-b border-neutral-400 mb-1" />
                 <p className="text-[10px] md:text-sm font-bold text-neutral-800">{s.name}</p>
                 <p className="text-[9px] md:text-xs text-neutral-500">{s.role}</p>
