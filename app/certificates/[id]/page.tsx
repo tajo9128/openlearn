@@ -95,10 +95,10 @@ export default function CertificatePage() {
         <div
           className="absolute pointer-events-none"
           style={{
-            right: '-180px',
-            top: '-40px',
-            width: '460px',
-            height: '460px',
+            right: '-150px',
+            top: '-30px',
+            width: '340px',
+            height: '340px',
             borderRadius: '50%',
             background: 'radial-gradient(circle at 35% 35%, #f87171 0%, #ef4444 45%, #dc2626 100%)',
             opacity: 0.9,
@@ -107,17 +107,17 @@ export default function CertificatePage() {
         <div
           className="absolute pointer-events-none"
           style={{
-            right: '-60px',
-            top: '160px',
-            width: '220px',
-            height: '220px',
+            right: '-50px',
+            top: '150px',
+            width: '160px',
+            height: '160px',
             borderRadius: '50%',
             background: 'radial-gradient(circle at 40% 40%, #fb7185 0%, #ef4444 70%)',
             opacity: 0.85,
           }}
         />
 
-        <div className="relative h-full flex flex-col px-8 md:px-12 py-6 md:py-8">
+        <div className="relative h-full flex flex-col px-8 md:px-12 py-6 md:py-7">
           {/* Header row: logo left, NVIDIA badge right */}
           <div className="flex items-start justify-between">
             <div>
@@ -125,7 +125,7 @@ export default function CertificatePage() {
               <img
                 src="/cert/logo-new.png"
                 alt="BioDockify"
-                className="h-12 md:h-16 mix-blend-multiply"
+                className="h-16 md:h-24 mix-blend-multiply"
               />
             </div>
             {/* NVIDIA Inception badge */}
@@ -143,12 +143,12 @@ export default function CertificatePage() {
           </div>
 
           {/* Title */}
-          <h1 className="text-3xl md:text-6xl font-bold text-neutral-800 mt-4 md:mt-6 tracking-tight">
+          <h1 className="text-3xl md:text-6xl font-bold text-neutral-800 mt-2 md:mt-3 tracking-tight">
             Training Certificate
           </h1>
 
           {/* Awarded to */}
-          <p className="text-xs md:text-sm text-neutral-500 mt-3 md:mt-4">This certificate is awarded to</p>
+          <p className="text-xs md:text-sm text-neutral-500 mt-2 md:mt-3">This certificate is awarded to</p>
           <p
             className="text-2xl md:text-4xl font-bold text-neutral-800 mt-2 pb-1 border-b-2 border-neutral-300 inline-block self-start px-2 md:px-4"
             style={{ minWidth: '55%' }}
