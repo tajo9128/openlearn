@@ -6,25 +6,9 @@ import { useParams } from 'next/navigation';
 import { ShieldCheck } from 'lucide-react';
 
 const SIGNATORIES = [
-  {
-    name: 'B K Fatheema',
-    role: 'BioDockify – Founder',
-    sig: 'B K Fatheema',
-    sigImg: '/cert/sig-fatheema.png',
-    sigHeight: '34px',
-  },
-  {
-    name: 'Mr. Tajuddin Shaik',
-    role: 'Co-Founder & Instructor',
-    sig: 'Tajuddin Shaik',
-    sigImg: '/cert/sig-tajuddin.png',
-    sigHeight: '34px',
-  },
-  {
-    name: 'Dr. Mohd Afroz',
-    role: 'Scientific Advisor & Instructor',
-    sig: 'Mohd Afroz',
-  },
+  { name: 'B K Fatheema', role: 'BioDockify – Founder', sig: 'B K Fatheema' },
+  { name: 'Mr. Tajuddin Shaik', role: 'Co-Founder & Instructor', sig: 'Tajuddin Shaik' },
+  { name: 'Dr. Mohd Afroz', role: 'Scientific Advisor & Instructor', sig: 'Mohd Afroz' },
 ];
 
 export default function CertificatePage() {
@@ -119,7 +103,7 @@ export default function CertificatePage() {
         {/* NVIDIA badge centered on the circle */}
         <div
           className="absolute hidden md:flex items-center justify-center bg-white border border-neutral-300 rounded-lg shadow-md overflow-hidden"
-          style={{ right: '25px', top: '85px', width: '115px', height: '145px' }}
+          style={{ right: '30px', top: '75px', width: '110px', height: '138px' }}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
@@ -143,7 +127,7 @@ export default function CertificatePage() {
           </div>
 
           {/* Title */}
-          <h1 className="text-3xl md:text-6xl font-bold text-neutral-800 mt-1 md:mt-2 tracking-tight">
+          <h1 className="text-3xl md:text-6xl font-bold text-neutral-800 mt-5 md:mt-7 tracking-tight">
             Training Certificate
           </h1>
 
@@ -179,22 +163,12 @@ export default function CertificatePage() {
           <div className="mt-auto pt-4 grid grid-cols-3 gap-6 max-w-3xl items-end">
             {SIGNATORIES.map((s) => (
               <div key={s.name} className="flex flex-col items-start">
-                {s.sigImg ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={s.sigImg}
-                    alt={`${s.name} signature`}
-                    className="mb-1 object-contain mix-blend-multiply"
-                    style={{ height: s.sigHeight ?? '38px' }}
-                  />
-                ) : (
-                  <p
-                    className="text-lg md:text-2xl text-neutral-700 leading-none mb-1"
-                    style={{ fontFamily: "'Segoe Script', 'Brush Script MT', 'Dancing Script', cursive" }}
-                  >
-                    {s.sig}
-                  </p>
-                )}
+                <p
+                  className="text-lg md:text-2xl text-neutral-700 leading-none mb-1"
+                  style={{ fontFamily: "'Segoe Script', 'Brush Script MT', 'Dancing Script', cursive" }}
+                >
+                  {s.sig}
+                </p>
                 <div className="w-full border-b border-neutral-400 mb-1" />
                 <p className="text-[10px] md:text-sm font-bold text-neutral-800">{s.name}</p>
                 <p className="text-[9px] md:text-xs text-neutral-500">{s.role}</p>
