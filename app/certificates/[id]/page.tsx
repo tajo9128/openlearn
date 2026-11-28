@@ -55,10 +55,13 @@ export default function CertificatePage() {
     year: 'numeric',
   }).replace(/\//g, '/');
 
-  const courseDesc =
-    `for successfully completing the ${course?.title ?? 'course'} training programme on ` +
-    `BioDockify Learn, covering practical applications of Python Programming, Pharmaceutical ` +
-    `Data Analysis, and Computational Research Skills with hands-on examples.`;
+  const courseDesc = meta.course_description
+    ? `for successfully completing the ${course?.title ?? 'course'} training programme on ` +
+      `BioDockify Learn. ${meta.course_description} Delivered through interactive ` +
+      `AI-narrated lessons, hands-on exercises and assessments.`
+    : `for successfully completing the ${course?.title ?? 'course'} training programme on ` +
+      `BioDockify Learn, delivered through interactive AI-narrated lessons, hands-on ` +
+      `exercises and assessments.`;
 
   return (
     <div className="min-h-screen bg-neutral-300 flex flex-col items-center justify-center p-4 print:bg-white">
