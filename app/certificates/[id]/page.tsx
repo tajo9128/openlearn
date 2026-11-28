@@ -119,7 +119,7 @@ export default function CertificatePage() {
         {/* NVIDIA badge centered on the circle */}
         <div
           className="absolute hidden md:flex items-center justify-center bg-white border border-neutral-300 rounded-lg shadow-md overflow-hidden"
-          style={{ right: '-35px', top: '85px', width: '115px', height: '145px' }}
+          style={{ right: '25px', top: '85px', width: '115px', height: '145px' }}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
