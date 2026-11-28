@@ -51,13 +51,12 @@ export default function CertificatePage() {
   // and training hours come from the course's certificate template.
   const courseTitle = meta.course_title ?? course?.title ?? 'Course';
   const totalHours = meta.training_hours ?? 10;
-  const issuedDate =
-    meta.issued_date ??
-    new Date(certificate.issued_at).toLocaleDateString('en-GB', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-    });
+  const issuedDate = (() => {
+    const raw = meta.issued_date ?? certificate.issued_at;
+    const d = new Date(raw);
+    if (isNaN(d.getTime())) return String(raw);
+    return d.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  })();
 
   const courseDesc = meta.course_description
     ? `for successfully completing the ${courseTitle} training programme on ` +
