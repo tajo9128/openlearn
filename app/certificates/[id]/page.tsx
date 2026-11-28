@@ -91,14 +91,14 @@ export default function CertificatePage() {
             backgroundSize: '22px 22px',
           }}
         />
-        {/* Big red circle decor right */}
+        {/* Red circle decor right — smaller, NVIDIA badge sits centered on it */}
         <div
           className="absolute pointer-events-none"
           style={{
-            right: '-150px',
-            top: '-30px',
-            width: '340px',
-            height: '340px',
+            right: '-110px',
+            top: '30px',
+            width: '260px',
+            height: '260px',
             borderRadius: '50%',
             background: 'radial-gradient(circle at 35% 35%, #f87171 0%, #ef4444 45%, #dc2626 100%)',
             opacity: 0.9,
@@ -107,18 +107,30 @@ export default function CertificatePage() {
         <div
           className="absolute pointer-events-none"
           style={{
-            right: '-50px',
-            top: '150px',
-            width: '160px',
-            height: '160px',
+            right: '-40px',
+            top: '180px',
+            width: '130px',
+            height: '130px',
             borderRadius: '50%',
             background: 'radial-gradient(circle at 40% 40%, #fb7185 0%, #ef4444 70%)',
             opacity: 0.85,
           }}
         />
+        {/* NVIDIA badge centered on the circle */}
+        <div
+          className="absolute hidden md:flex items-center justify-center bg-white border border-neutral-300 rounded-lg shadow-md overflow-hidden"
+          style={{ right: '-35px', top: '85px', width: '115px', height: '145px' }}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/cert/nvidia-inception.png"
+            alt="Proud to be part of NVIDIA Inception Program"
+            className="w-full h-full object-contain"
+          />
+        </div>
 
-        <div className="relative h-full flex flex-col px-8 md:px-12 py-6 md:py-7">
-          {/* Header row: logo left, NVIDIA badge right */}
+        <div className="relative h-full flex flex-col px-8 md:px-12 pt-4 md:pt-5 pb-6 md:pb-7">
+          {/* Header row: logo left */}
           <div className="flex items-start justify-between">
             <div>
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -128,22 +140,10 @@ export default function CertificatePage() {
                 className="h-16 md:h-24 mix-blend-multiply"
               />
             </div>
-            {/* NVIDIA Inception badge */}
-            <div
-              className="hidden md:flex items-center justify-center bg-white border border-neutral-300 rounded-lg shadow-sm overflow-hidden"
-              style={{ width: '120px', height: '150px' }}
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/cert/nvidia-inception.png"
-                alt="Proud to be part of NVIDIA Inception Program"
-                className="w-full h-full object-contain"
-              />
-            </div>
           </div>
 
           {/* Title */}
-          <h1 className="text-3xl md:text-6xl font-bold text-neutral-800 mt-2 md:mt-3 tracking-tight">
+          <h1 className="text-3xl md:text-6xl font-bold text-neutral-800 mt-1 md:mt-2 tracking-tight">
             Training Certificate
           </h1>
 
