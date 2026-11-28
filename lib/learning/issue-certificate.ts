@@ -115,6 +115,19 @@ export async function issueCertificateIfEligible(
   const certId = randomUUID();
   const certNumber = generateCertificateNumber();
 
+  // Course info + duration for the certificate design
+  const { data: course } = await supabaseQuerySingle(TABLES.COURSES, {
+    filters: { id: `eq.${courseId}` },
+  });
+  const { data: courseLessonsMeta } = await supabaseQuery(TABLES.LESSONS, {
+    filters: { course_id: `eq.${courseId}` },
+  });
+  const totalMinutes = (courseLessonsMeta ?? []).reduce(
+    (sum: number, l: any) => sum + (l.duration_minutes ?? 15),
+    0,
+  );
+  const totalHours = Math.max(10, Math.round(totalMinutes / 60));
+
   const { data, error } = await supabaseInsert(TABLES.CERTIFICATES, {
     id: certId,
     user_id: userId,
@@ -123,6 +136,9 @@ export async function issueCertificateIfEligible(
     template: 'default',
     metadata: {
       student_name: studentName,
+      college: (course as any)?.college ?? '',
+      course_title: (course as any)?.title ?? '',
+      training_hours: totalHours,
       lessons_completed: lessonsCompleted,
       total_lessons: totalLessons,
       exercises_passed: exercisesPassed,
