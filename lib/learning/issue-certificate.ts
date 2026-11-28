@@ -115,7 +115,13 @@ export async function issueCertificateIfEligible(
   const certId = randomUUID();
   const certNumber = generateCertificateNumber();
 
-  // Course info + duration for the certificate design — computed from THIS course
+  // Per-course certificate template — saved ahead of time, so issuing only
+  // needs the student name + date.
+  const { data: template } = await supabaseQuerySingle('certificate_templates' as any, {
+    filters: { course_id: `eq.${courseId}` },
+  } as any);
+
+  // Course info + duration fallback (if no template row exists yet)
   const { data: course } = await supabaseQuerySingle(TABLES.COURSES, {
     filters: { id: `eq.${courseId}` },
   });
@@ -126,7 +132,11 @@ export async function issueCertificateIfEligible(
     (sum: number, l: any) => sum + (l.duration_minutes ?? 15),
     0,
   );
-  const totalHours = Math.max(1, Math.round(totalMinutes / 60));
+  const fallbackHours = Math.max(1, Math.round(totalMinutes / 60));
+
+  const courseTitle = (template as any)?.course_title ?? (course as any)?.title ?? 'course';
+  const courseDescription = (template as any)?.course_description ?? (course as any)?.description ?? '';
+  const totalHours = (template as any)?.training_hours ?? fallbackHours;
 
   const { data, error } = await supabaseInsert(TABLES.CERTIFICATES, {
     id: certId,
@@ -137,13 +147,14 @@ export async function issueCertificateIfEligible(
     metadata: {
       student_name: studentName,
       college: (course as any)?.college ?? '',
-      course_title: (course as any)?.title ?? '',
-      course_description: (course as any)?.description ?? '',
+      course_title: courseTitle,
+      course_description: courseDescription,
       training_hours: totalHours,
       lessons_completed: lessonsCompleted,
       total_lessons: totalLessons,
       exercises_passed: exercisesPassed,
       total_exercises: totalExercises,
+      issued_date: new Date().toISOString().slice(0, 10),
     },
   });
 

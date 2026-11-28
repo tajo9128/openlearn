@@ -44,22 +44,26 @@ export default function CertificatePage() {
     );
   }
 
-  const course = certificate.learning_courses;
   const meta = certificate.metadata ?? {};
   const studentName = meta.student_name ?? 'BioDockify Student';
   const college = meta.college ?? '';
-  const totalHours = meta.training_hours ?? (meta.total_lessons ? Math.max(10, Math.round((meta.total_lessons * 15) / 60)) : 10);
-  const issuedDate = new Date(certificate.issued_at).toLocaleDateString('en-GB', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  }).replace(/\//g, '/');
+  // Per-course template values (saved at issue time) — course title/description
+  // and training hours come from the course's certificate template.
+  const courseTitle = meta.course_title ?? course?.title ?? 'Course';
+  const totalHours = meta.training_hours ?? 10;
+  const issuedDate =
+    meta.issued_date ??
+    new Date(certificate.issued_at).toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    });
 
   const courseDesc = meta.course_description
-    ? `for successfully completing the ${course?.title ?? 'course'} training programme on ` +
+    ? `for successfully completing the ${courseTitle} training programme on ` +
       `BioDockify Learn. ${meta.course_description} Delivered through interactive ` +
       `AI-narrated lessons, hands-on exercises and assessments.`
-    : `for successfully completing the ${course?.title ?? 'course'} training programme on ` +
+    : `for successfully completing the ${courseTitle} training programme on ` +
       `BioDockify Learn, delivered through interactive AI-narrated lessons, hands-on ` +
       `exercises and assessments.`;
 
