@@ -121,13 +121,12 @@ export default function CertificatePage() {
           {/* Header row: logo left, NVIDIA badge right */}
           <div className="flex items-start justify-between">
             <div>
-              <div className="flex items-center gap-2">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/logo-biodockify.svg" alt="BioDockify" className="h-8 md:h-10" />
-              </div>
-              <p className="text-[10px] md:text-xs font-semibold text-rose-600 mt-1.5">
-                Building the Future of AI-Driven Pharmaceutical Research
-              </p>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/cert/logo-new.png"
+                alt="BioDockify"
+                className="h-12 md:h-16 mix-blend-multiply"
+              />
             </div>
             {/* NVIDIA Inception badge */}
             <div
