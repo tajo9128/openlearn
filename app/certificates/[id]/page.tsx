@@ -80,9 +80,9 @@ export default function CertificatePage() {
           className="absolute pointer-events-none"
           style={{
             right: '-110px',
-            top: '30px',
-            width: '260px',
-            height: '260px',
+            top: '10px',
+            width: '300px',
+            height: '300px',
             borderRadius: '50%',
             background: 'radial-gradient(circle at 35% 35%, #f87171 0%, #ef4444 45%, #dc2626 100%)',
             opacity: 0.9,
@@ -160,18 +160,18 @@ export default function CertificatePage() {
           </div>
 
           {/* Signatures */}
-          <div className="mt-auto pt-4 grid grid-cols-3 gap-6 max-w-3xl items-end">
+          <div className="mt-auto pt-4 grid grid-cols-3 gap-6 max-w-3xl items-end mx-auto">
             {SIGNATORIES.map((s) => (
-              <div key={s.name} className="flex flex-col items-start">
+              <div key={s.name} className="flex flex-col items-center">
                 <p
                   className="text-lg md:text-2xl text-neutral-700 leading-none mb-1"
                   style={{ fontFamily: "'Segoe Script', 'Brush Script MT', 'Dancing Script', cursive" }}
                 >
                   {s.sig}
                 </p>
-                <div className="w-full border-b border-neutral-400 mb-1" />
-                <p className="text-[10px] md:text-sm font-bold text-neutral-800">{s.name}</p>
-                <p className="text-[9px] md:text-xs text-neutral-500">{s.role}</p>
+                <div className="w-4/5 border-b border-neutral-400 mb-1" />
+                <p className="text-[10px] md:text-sm font-bold text-neutral-800 text-center">{s.name}</p>
+                <p className="text-[9px] md:text-xs text-neutral-500 text-center">{s.role}</p>
               </div>
             ))}
           </div>
